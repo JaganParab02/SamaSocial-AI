@@ -62,15 +62,28 @@ class WebParser(BaseParser):
                 unwanted_tag.decompose()
 
             # Remove tags containing common header/footer menu classnames
-            for div in list(soup.find_all(["div", "section"])):
-                if not div or not hasattr(div, "get"):
+            # Collect first, then decompose — avoids invalidating child tags mid-iteration
+            divs_to_remove = []
+            for div in soup.find_all(["div", "section"]):
+                try:
+                    # Skip elements already destroyed by a parent's decompose()
+                    if getattr(div, "decomposed", False):
+                        continue
+                    class_val = div.get("class", [])
+                    class_str = " ".join(class_val).lower() if isinstance(class_val, list) else str(class_val or "").lower()
+                    id_val = div.get("id", "")
+                    id_str = str(id_val or "").lower()
+                    if any(x in class_str or x in id_str for x in ["nav", "footer", "menu", "sidebar", "banner", "cookie"]):
+                        divs_to_remove.append(div)
+                except (AttributeError, TypeError):
+                    # Tag was already decomposed/invalidated by a prior parent removal
                     continue
-                class_val = div.get("class")
-                class_str = " ".join(class_val).lower() if isinstance(class_val, list) else (str(class_val).lower() if class_val is not None else "")
-                id_val = div.get("id")
-                id_str = str(id_val).lower() if id_val is not None else ""
-                if any(x in class_str or x in id_str for x in ["nav", "footer", "menu", "sidebar", "banner", "cookie"]):
-                    div.decompose()
+            for div in divs_to_remove:
+                try:
+                    if not getattr(div, "decomposed", False):
+                        div.decompose()
+                except Exception:
+                    pass
 
             # 2. Extract Title
             title_tag = soup.find("title")

@@ -166,3 +166,27 @@ class DocumentService:
             "status": "deleted",
             "message": f"Successfully removed source and purged {'all' if vectors_deleted else '0'} linked vectors from Qdrant."
         }
+
+    def delete_session_data(self, session_id: str) -> Dict[str, Any]:
+        """
+        Delete ALL sources, vectors, and registry entries for a given session.
+        Called when creating a new session to ensure a clean slate.
+        """
+        # 1. Delete all vectors in Qdrant belonging to this session
+        vectors_deleted = self.vectordb.delete_session_vectors(session_id)
+
+        # 2. Remove all source registry entries for this session
+        deleted_source_ids = self.source_service.delete_sources_by_session(session_id)
+
+        logger.info(
+            "Session cleanup complete for '%s': %d sources removed, vectors_purged=%s.",
+            session_id, len(deleted_source_ids), vectors_deleted
+        )
+
+        return {
+            "session_id": session_id,
+            "sources_deleted": len(deleted_source_ids),
+            "vectors_purged": vectors_deleted,
+            "status": "cleaned",
+        }
+

@@ -89,3 +89,22 @@ class SourceService:
             logger.info("Removed source '%s' (ID: %s) from source registry.", name, source_id)
             return True
         return False
+
+    def delete_sources_by_session(self, session_id: str) -> List[str]:
+        """
+        Remove ALL source records belonging to a given session.
+
+        Returns:
+            List of deleted source_ids.
+        """
+        to_delete = [
+            sid for sid, record in self._sources.items()
+            if record.get("session_id") == session_id
+        ]
+        for sid in to_delete:
+            name = self._sources[sid].get("name", sid)
+            del self._sources[sid]
+            logger.info("Session cleanup: removed source '%s' (ID: %s).", name, sid)
+        logger.info("Deleted %d sources for session '%s'.", len(to_delete), session_id)
+        return to_delete
+

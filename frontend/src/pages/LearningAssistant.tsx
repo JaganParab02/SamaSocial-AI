@@ -12,17 +12,25 @@ import { useSession } from '../hooks/useSession';
 import { useChat } from '../hooks/useChat';
 import { useSources } from '../hooks/useSources';
 import { useUpload } from '../hooks/useUpload';
+import { chatService } from '../services/chatService';
 
 export default function LearningAssistant() {
   const { sessionId, createNewSession } = useSession();
   const { messages, isStreaming, sendMessage, stopStreaming, clearChat } = useChat(sessionId);
-  const { sources, isLoading: isLoadingSources, refetch, deleteSource, isDeleting } = useSources();
+  const { sources, isLoading: isLoadingSources, refetch, deleteSource, isDeleting } = useSources(sessionId);
   const { uploads, uploadFile, uploadUrl, uploadYoutube, isUploading } = useUpload(sessionId);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const handleNewSession = () => {
+  const handleNewSession = async () => {
+    const oldSessionId = sessionId;
     clearChat();
     createNewSession();
+    // Clean up old session data in the backend (vectors, sources, history)
+    try {
+      await chatService.cleanupSession(oldSessionId);
+    } catch {
+      // Silently ignore cleanup errors for old sessions
+    }
   };
 
   const handleRegenerateLast = () => {

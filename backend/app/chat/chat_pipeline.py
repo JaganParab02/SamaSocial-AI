@@ -92,12 +92,12 @@ class ChatPipeline:
         # 2. Append user message to memory
         self.memory.append(session, "user", question)
 
-        # 3. Retrieve relevant chunks
+        # 3. Retrieve relevant chunks (scoped to current session)
         retrieved_chunks = self.retriever.retrieve(
             query=question,
             top_k=top_k,
             source_filter=source_filter,
-            session_id=None,  # Search across all indexed sources, not session-scoped
+            session_id=session_id,
         )
 
         # 4. Build optimized context
@@ -173,6 +173,7 @@ class ChatPipeline:
 
         retrieved_chunks = self.retriever.retrieve(
             query=question, top_k=top_k, source_filter=source_filter,
+            session_id=session_id,
         )
 
         context = self.context_builder.build_context(retrieved_chunks)

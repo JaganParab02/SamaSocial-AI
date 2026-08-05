@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from app.chat.chat_pipeline import ChatPipeline
 from app.chat.session_manager import SessionManager
 from app.chat.memory_service import MemoryService
+from app.services.document_service import DocumentService
 from app.models.chat import ChatRequest, ChatResponse, ConversationHistory, SourceFilter
 from app.core.logger import get_logger
 
@@ -28,10 +29,40 @@ class ChatService:
         chat_pipeline: ChatPipeline,
         session_manager: SessionManager,
         memory_service: MemoryService,
+        doc_service: DocumentService,
     ):
         self.pipeline = chat_pipeline
         self.session_manager = session_manager
         self.memory = memory_service
+        self.doc_service = doc_service
+
+    def cleanup_old_session(self, old_session_id: str) -> Dict[str, Any]:
+        """
+        Fully purge an old session: vectors from Qdrant, sources from registry,
+        conversation history, and session object.
+        Called when the user starts a new session.
+        """
+        logger.info("Cleaning up old session: %s", old_session_id)
+
+        # 1. Delete vectors + source registry entries
+        cleanup_result = self.doc_service.delete_session_data(old_session_id)
+
+        # 2. Clear conversation memory
+        session = self.session_manager.get_session(old_session_id)
+        if session:
+            self.memory.clear(session)
+
+        # 3. Delete session object
+        self.session_manager.delete_session(old_session_id)
+
+        logger.info("Old session '%s' fully cleaned up.", old_session_id)
+        return {
+            "old_session_id": old_session_id,
+            "status": "cleaned",
+            "sources_deleted": cleanup_result.get("sources_deleted", 0),
+            "vectors_purged": cleanup_result.get("vectors_purged", False),
+            "message": "Old session data fully purged. Ready for new session.",
+        }
 
     def handle_message(
         self,

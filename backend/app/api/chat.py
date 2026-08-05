@@ -6,6 +6,7 @@ Handles synchronous chat, streaming chat, and conversation history management.
 from typing import Any, Dict
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 
 from app.models.chat import (
     ChatRequest,
@@ -83,3 +84,21 @@ async def reset_session(
     """
     logger.info("Resetting session: %s", request.session_id)
     return chat_service.reset_session(request.session_id)
+
+
+class NewSessionRequest(BaseModel):
+    """Request to start a new session by cleaning up an old one."""
+    old_session_id: str = Field(..., description="The previous session ID to clean up")
+
+
+@router.post("/new-session")
+async def new_session(
+    request: NewSessionRequest,
+    chat_service: ChatService = Depends(get_chat_service),
+) -> Dict[str, Any]:
+    """
+    Clean up an old session completely (vectors, sources, history)
+    before the frontend switches to a new session ID.
+    """
+    logger.info("New session requested, cleaning up old session: %s", request.old_session_id)
+    return chat_service.cleanup_old_session(request.old_session_id)

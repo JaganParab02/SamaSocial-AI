@@ -176,6 +176,7 @@ def get_chat_service() -> ChatService:
         chat_pipeline=get_chat_pipeline(),
         session_manager=get_session_manager(),
         memory_service=get_memory_service(),
+        doc_service=get_document_service(),
     )
 
 

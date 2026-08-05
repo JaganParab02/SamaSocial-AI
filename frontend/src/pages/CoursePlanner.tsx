@@ -14,18 +14,25 @@ import { useSession } from '../hooks/useSession';
 import { usePlanner } from '../hooks/usePlanner';
 import { useSources } from '../hooks/useSources';
 import { useUpload } from '../hooks/useUpload';
+import { chatService } from '../services/chatService';
 
 export default function CoursePlanner() {
   const { sessionId, createNewSession } = useSession();
   const { messages, isStreaming, sendMessage, stopStreaming, coursePlan, savePlan, isSaving } = usePlanner(sessionId);
-  const { sources, isLoading: isLoadingSources, refetch, deleteSource, isDeleting } = useSources();
+  const { sources, isLoading: isLoadingSources, refetch, deleteSource, isDeleting } = useSources(sessionId);
   const { uploads, uploadFile, uploadUrl, uploadYoutube, isUploading } = useUpload(sessionId);
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleNewSession = () => {
+  const handleNewSession = async () => {
+    const oldSessionId = sessionId;
     createNewSession();
+    try {
+      await chatService.cleanupSession(oldSessionId);
+    } catch {
+      // Silently ignore cleanup errors
+    }
   };
 
   const handleRegenerateLast = () => {

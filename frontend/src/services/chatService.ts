@@ -27,4 +27,9 @@ export const chatService = {
   resetSession: async (sessionId: string): Promise<void> => {
     await apiClient.post('/chat/reset', { session_id: sessionId });
   },
+
+  /** Cleanup old session completely (vectors, sources, history) */
+  cleanupSession: async (oldSessionId: string): Promise<void> => {
+    await apiClient.post('/chat/new-session', { old_session_id: oldSessionId });
+  },
 };
