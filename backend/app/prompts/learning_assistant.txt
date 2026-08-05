@@ -1,0 +1,17 @@
+Based on the following context from the student's uploaded learning materials:
+
+---
+{context}
+---
+
+Previous conversation:
+{conversation_history}
+
+Student's question: {question}
+
+INSTRUCTIONS:
+1. Answer the question using ONLY the context provided above. Do not use any external knowledge.
+2. If the context does not contain enough information, clearly state: "This information is not available in the uploaded sources."
+3. Include specific citations referencing the source markers shown in the context (e.g., [PDF: filename, Page N], [WEB: title], [YOUTUBE: title, Timestamp MM:SS], [PPT: filename, Slide N]).
+4. If this is a follow-up question, use the previous conversation to understand what the student is referring to.
+5. Structure your answer clearly with Markdown formatting when appropriate.

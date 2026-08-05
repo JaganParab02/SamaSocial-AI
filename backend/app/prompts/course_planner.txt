@@ -1,0 +1,19 @@
+Based on the following learning materials:
+
+---
+{context}
+---
+
+Create a structured learning plan with the following parameters:
+- Goal: {goal}
+- Duration: {duration_weeks} weeks
+- Difficulty: {difficulty}
+
+Generate a week-by-week plan with:
+1. Module title
+2. Key topics to cover
+3. Relevant resources from the materials
+4. Practice exercises
+5. Assessment criteria
+
+Format the output as structured JSON.

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.git/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+qdrant_storage/
+.ai/
+docs/
+*.md
