@@ -2,12 +2,13 @@
 Planner API Router exposing endpoints for Task 2 (Course Planning Assistant).
 """
 import json
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Response
 from fastapi.responses import StreamingResponse
 from app.core.dependencies import get_planner_service
 from app.planner.service import CoursePlannerService
 from app.planner.schemas import PlannerRequest
 from app.planner.models import CoursePlan
+from app.services.export_service import ExportService
 
 router = APIRouter(prefix="/planner", tags=["Course Planner"])
 
@@ -72,3 +73,44 @@ async def export_json(
     if not plan:
         raise HTTPException(status_code=404, detail="No course plan found for this session.")
     return json.loads(plan.model_dump_json())
+
+@router.post("/export/markdown")
+async def export_markdown(
+    session_id: str = Body(..., embed=True),
+    planner_service: CoursePlannerService = Depends(get_planner_service)
+):
+    """
+    Exports the current course plan as formatted GitHub Flavored Markdown.
+    """
+    plan = planner_service.get_course_plan(session_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="No course plan found for this session.")
+    md_content = ExportService.export_to_markdown(plan)
+    return Response(content=md_content, media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="course_plan_{session_id[:8]}.md"'})
+
+@router.post("/export/pdf")
+async def export_pdf(
+    session_id: str = Body(..., embed=True),
+    planner_service: CoursePlannerService = Depends(get_planner_service)
+):
+    """
+    Exports the current course plan as a clean PDF document generated in memory.
+    """
+    plan = planner_service.get_course_plan(session_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="No course plan found for this session.")
+    pdf_bytes = ExportService.export_to_pdf_bytes(plan)
+    return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="course_plan_{session_id[:8]}.pdf"'})
+
+@router.post("/export/docx-stub")
+async def export_docx(
+    session_id: str = Body(..., embed=True),
+    planner_service: CoursePlannerService = Depends(get_planner_service)
+):
+    """
+    Architectural interface preparing for native DOCX generation.
+    """
+    plan = planner_service.get_course_plan(session_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="No course plan found for this session.")
+    return ExportService.export_to_docx_stub(plan)

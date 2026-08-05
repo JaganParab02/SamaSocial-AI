@@ -2,8 +2,9 @@
  * Topbar — Premium SaaS navigation header with inline editable conversation titles, connection status, and actions.
  */
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Pencil, Check, User, Sparkles, Settings, LogOut } from 'lucide-react';
+import { Plus, Pencil, Check, User, Sparkles, Settings, LogOut, MessageSquare, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ConnectionIndicator from '../shared/ConnectionIndicator';
 
 interface TopbarProps {
@@ -18,6 +19,9 @@ export default function Topbar({ sessionId, pageTitle, onNewSession }: TopbarPro
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isPlannerMode = location.pathname.includes('/course-planner');
 
   useEffect(() => {
     const savedName = localStorage.getItem(`session_name_${sessionId}`);
@@ -76,35 +80,58 @@ export default function Topbar({ sessionId, pageTitle, onNewSession }: TopbarPro
         </div>
       </div>
 
-      {/* Center: Current Conversation Name (Editable) */}
-      <div className="flex items-center justify-center flex-1 max-w-sm px-2">
-        {isEditing ? (
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-indigo-500 rounded-lg px-2.5 py-1 shadow-inner w-full">
-            <input
-              ref={inputRef}
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onBlur={saveTitle}
-              className="bg-transparent border-none outline-none text-sm text-slate-100 font-medium w-full text-center"
-              maxLength={40}
-            />
-            <button onClick={saveTitle} className="text-emerald-400 hover:text-emerald-300 p-0.5">
-              <Check className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <motion.button
-            onClick={() => setIsEditing(true)}
-            whileHover={{ scale: 1.02 }}
-            className="group flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800/60 border border-transparent hover:border-slate-700/50 transition-all cursor-pointer text-slate-300 font-medium text-sm"
-            title="Click to rename conversation"
+      {/* Center: AI Mode Switcher Toggle & Editable Title */}
+      <div className="flex items-center gap-4 flex-1 justify-center max-w-2xl px-2">
+        {/* Seamless App Mode Switcher */}
+        <div className="flex items-center bg-slate-950/80 p-1 rounded-xl border border-slate-800 shadow-inner">
+          <button
+            onClick={() => navigate('/learning-assistant')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              !isPlannerMode ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30' : 'text-slate-400 hover:text-slate-200'
+            }`}
           >
-            <span className="truncate max-w-[220px] text-slate-200">{title}</span>
-            <Pencil className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </motion.button>
-        )}
+            <MessageSquare className="w-3.5 h-3.5" /> Learning Assistant
+          </button>
+          <button
+            onClick={() => navigate('/course-planner')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              isPlannerMode ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" /> Course Planner
+          </button>
+        </div>
+
+        {/* Conversation Title */}
+        <div className="hidden md:flex items-center max-w-xs">
+          {isEditing ? (
+            <div className="flex items-center gap-1.5 bg-slate-900 border border-indigo-500 rounded-lg px-2.5 py-1 shadow-inner w-full">
+              <input
+                ref={inputRef}
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={saveTitle}
+                className="bg-transparent border-none outline-none text-xs text-slate-100 font-medium w-full text-center"
+                maxLength={40}
+              />
+              <button onClick={saveTitle} className="text-emerald-400 hover:text-emerald-300 p-0.5">
+                <Check className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <motion.button
+              onClick={() => setIsEditing(true)}
+              whileHover={{ scale: 1.02 }}
+              className="group flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-slate-800/60 border border-transparent hover:border-slate-700/50 transition-all cursor-pointer text-slate-300 font-medium text-xs"
+              title="Click to rename conversation"
+            >
+              <span className="truncate max-w-[150px] text-slate-200">{title}</span>
+              <Pencil className="w-3 h-3 text-slate-500 group-hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </motion.button>
+          )}
+        </div>
       </div>
 
       {/* Right: Buttons (+ New Chat, Connection Status, Profile) */}

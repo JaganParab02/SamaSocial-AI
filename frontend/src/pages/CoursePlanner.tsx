@@ -116,7 +116,8 @@ export default function CoursePlanner() {
             <CoursePlanPreview 
               plan={coursePlan} 
               sessionId={sessionId}
-              onEditToggle={() => setIsEditing(true)} 
+              onEditToggle={() => setIsEditing(true)}
+              onSavePlan={(newPlan) => savePlan(newPlan)}
             />
           ) : coursePlan && isEditing ? (
             <CourseEditor 
@@ -133,6 +134,7 @@ export default function CoursePlanner() {
               plan={{ title: '', subject: '', description: '', target_audience: '', prerequisites: [], learning_outcomes: [], modules: [] }} 
               sessionId={sessionId}
               onEditToggle={() => {}} 
+              onSavePlan={(newPlan) => savePlan(newPlan)}
             />
           )}
         </aside>

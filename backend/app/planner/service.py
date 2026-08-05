@@ -4,6 +4,7 @@ and conversational responses via dual LLM calls.
 """
 import json
 from typing import AsyncGenerator, Dict, Any, Optional
+import re
 
 from app.core.logger import get_logger
 from app.chat.session_manager import SessionManager
@@ -13,6 +14,8 @@ from app.llm.prompt_builder import PromptLoader, PromptBuilder
 from app.rag.retriever import Retriever
 from app.planner.models import CoursePlan
 from app.planner.schemas import PlannerRequest
+from app.services.recommendation_service import RecommendationService
+from app.services.curriculum_service import CurriculumService
 
 logger = get_logger(__name__)
 
@@ -69,33 +72,62 @@ class CoursePlannerService:
         logger.info(f"Generating structured JSON Course Plan for session {session_id}")
         
         try:
-            # Using response_format to force JSON if supported by the model, otherwise prompt-based
-            # Since Groq supports json_object, we can pass it if we were using the SDK directly, 
-            # but we use our LLMClient. Let's just rely on the strict prompt instructions.
             result = self.llm_client.generate(
                 messages=messages,
-                temperature=0.1, # Low temperature for JSON generation
+                temperature=0.1,
             )
             
             content = result["content"].strip()
             
-            # Clean up markdown formatting if the LLM wrapped it in ```json
+            # Clean up markdown formatting if wrapped in ```json
             if content.startswith("```json"):
                 content = content[7:]
-            if content.startswith("```"):
+            elif content.startswith("```"):
                 content = content[3:]
             if content.endswith("```"):
                 content = content[:-3]
                 
             content = content.strip()
             
-            plan_data = json.loads(content)
-            # Validate against Pydantic model
+            # Helper to extract JSON from surrounding dialogue if present
+            start_idx = content.find('{')
+            end_idx = content.rfind('}')
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                content = content[start_idx:end_idx + 1]
+                
+            # Try primary JSON load & Pydantic parse
+            try:
+                plan_data = json.loads(content)
+            except json.JSONDecodeError as jde:
+                logger.warning("Initial JSON syntax error detected (%s). Attempting auto-recovery...", str(jde))
+                # Heuristics: remove trailing commas before closing brackets
+                content_repaired = re.sub(r',\s*([\]}])', r'\1', content)
+                try:
+                    plan_data = json.loads(content_repaired)
+                except Exception:
+                    logger.info("Heuristics insufficient. Requesting automated LLM JSON self-repair...")
+                    repair_messages = [
+                        {"role": "system", "content": "You are a specialized JSON syntactic repair engine. Output ONLY valid repaired JSON matching the CoursePlan schema. No markdown, no explanations."},
+                        {"role": "user", "content": f"Fix this broken JSON string:\n\n{content}"}
+                    ]
+                    repair_res = self.llm_client.generate(messages=repair_messages, temperature=0.0)
+                    fixed_content = repair_res["content"].strip()
+                    if fixed_content.startswith("```"):
+                        fixed_content = re.sub(r'^```[a-z]*\n?', '', fixed_content)
+                        fixed_content = re.sub(r'```$', '', fixed_content).strip()
+                    plan_data = json.loads(fixed_content)
+
             course_plan = CoursePlan(**plan_data)
+            
+            # Sanitize any paid or non-public resources
+            removed = RecommendationService.sanitize_course_resources(course_plan)
+            if removed > 0:
+                logger.info(f"Sanitized {removed} commercial resources from generated plan.")
+                
             return course_plan
             
         except Exception as e:
-            logger.error(f"Failed to generate JSON Course Plan: {str(e)}")
+            logger.error(f"Failed to generate or recover JSON Course Plan: {str(e)}")
             return None
 
     async def chat_stream(self, request: PlannerRequest) -> AsyncGenerator[str, None]:

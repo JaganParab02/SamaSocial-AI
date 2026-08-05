@@ -26,5 +26,21 @@ export const plannerService = {
       session_id: sessionId
     });
     return JSON.stringify(data, null, 2);
+  },
+
+  /** Export course plan as Markdown string */
+  exportCoursePlanMarkdown: async (sessionId: string): Promise<string> => {
+    const { data } = await apiClient.post<string>('/planner/export/markdown', {
+      session_id: sessionId
+    }, { responseType: 'text' });
+    return data;
+  },
+
+  /** Export course plan as PDF binary blob */
+  exportCoursePlanPDF: async (sessionId: string): Promise<Blob> => {
+    const { data } = await apiClient.post<Blob>('/planner/export/pdf', {
+      session_id: sessionId
+    }, { responseType: 'blob' });
+    return data;
   }
 };
