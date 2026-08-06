@@ -1,10 +1,9 @@
 /**
- * Sidebar — 296px responsive SaaS sidebar with categorized navigation tabs, sources, and pinned bottom upload panel.
+ * Sidebar — 296px responsive SaaS sidebar with categorized navigation tabs and source management.
  */
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { PanelLeftClose, PanelLeft, Database, Clock, Layers } from 'lucide-react';
 import SourceList from '../upload/SourceList';
-import UploadPanel from '../upload/UploadPanel';
 import type { SourceResponse, UploadItem } from '../../types/api';
 
 interface SidebarProps {
@@ -13,11 +12,11 @@ interface SidebarProps {
   onDeleteSource: (sourceId: string) => void;
   onRefreshSources: () => void;
   isDeletingSource: boolean;
-  uploads: UploadItem[];
-  isUploading: boolean;
-  onUploadFile: (file: File) => Promise<unknown>;
-  onUploadUrl: (url: string) => Promise<unknown>;
-  onUploadYoutube: (url: string) => Promise<unknown>;
+  uploads?: UploadItem[];
+  isUploading?: boolean;
+  onUploadFile?: (file: File) => Promise<unknown>;
+  onUploadUrl?: (url: string) => Promise<unknown>;
+  onUploadYoutube?: (url: string) => Promise<unknown>;
   focusUploadTrigger?: number;
 }
 
@@ -29,19 +28,9 @@ export default function Sidebar({
   onDeleteSource,
   onRefreshSources,
   isDeletingSource,
-  uploads,
-  isUploading,
-  onUploadFile,
-  onUploadUrl,
-  onUploadYoutube,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionTab>('sources');
-  const uploadPanelRef = useRef<HTMLDivElement>(null);
-
-  const scrollToUpload = () => {
-    uploadPanelRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const navItems: { key: SectionTab; label: string; icon: typeof Database }[] = [
     { key: 'sources', label: 'Sources', icon: Database },
@@ -66,16 +55,15 @@ export default function Sidebar({
       >
         {isCollapsed ? <PanelLeft className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
       </button>
-
       {/* Responsive Sidebar: 296px default, collapses to 64px icon rail on desktop when collapsed */}
       <aside
-        className={`bg-[#141519] border-r border-slate-800/70 flex flex-col transition-all duration-250 shrink-0 select-none ${
+        className={`bg-[#141519] border-r border-slate-800/70 flex flex-col h-full transition-all duration-250 shrink-0 select-none ${
           isCollapsed ? 'w-[64px] overflow-hidden' : 'w-[296px]'
         } hidden lg:flex z-20 text-slate-200`}
       >
         {/* Section Nav Strip (Sources, Recent, Collections) */}
         {isCollapsed ? (
-          <div className="py-3 flex flex-col items-center gap-2.5 border-b border-slate-800/60">
+          <div className="py-3 flex flex-col items-center gap-2.5 border-b border-slate-800/60 shrink-0">
             {navItems.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -91,7 +79,7 @@ export default function Sidebar({
             ))}
           </div>
         ) : (
-          <div className="px-2.5 pt-2.5 pb-2 border-b border-slate-800/60 flex items-center justify-between gap-1">
+          <div className="px-2.5 pt-2.5 pb-2 border-b border-slate-800/60 flex items-center justify-between gap-1 shrink-0">
             {navItems.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -109,8 +97,8 @@ export default function Sidebar({
           </div>
         )}
 
-        {/* Dynamic Section Content */}
-        <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Dynamic Section Content with internal scrollable boundary (min-h-0) */}
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
           {activeSection === 'collections' && !isCollapsed ? (
             <div className="p-6 text-center my-auto space-y-2.5">
               <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 mx-auto flex items-center justify-center text-indigo-400 shadow-inner">
@@ -134,7 +122,6 @@ export default function Sidebar({
               onDelete={onDeleteSource}
               onRefresh={onRefreshSources}
               isDeleting={isDeletingSource}
-              onOpenUpload={scrollToUpload}
             />
           ) : (
             <div className="py-4 flex flex-col items-center text-center my-auto">
@@ -144,19 +131,6 @@ export default function Sidebar({
             </div>
           )}
         </div>
-
-        {/* Pinned Bottom Upload Panel with generous upward elevation to pull UI up */}
-        {!isCollapsed && (
-          <div ref={uploadPanelRef} className="border-t border-slate-800/80 shrink-0 bg-[#111317] p-3 sm:p-4 pb-12 sm:pb-16 mb-4">
-            <UploadPanel
-              onUploadFile={onUploadFile}
-              onUploadUrl={onUploadUrl}
-              onUploadYoutube={onUploadYoutube}
-              uploads={uploads}
-              isUploading={isUploading}
-            />
-          </div>
-        )}
       </aside>
     </>
   );

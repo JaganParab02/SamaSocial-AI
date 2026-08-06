@@ -29,7 +29,7 @@ export function useChat(sessionId: string) {
   }, []);
 
   const sendMessage = useCallback(
-    (question: string) => {
+    (question: string, attachments?: { name: string; type: string }[]) => {
       if (!question.trim() || isStreaming) return;
 
       // Add user message
@@ -37,6 +37,7 @@ export function useChat(sessionId: string) {
         id: `msg-${Date.now()}-user`,
         role: 'user',
         content: question.trim(),
+        attachments,
         timestamp: new Date(),
       };
       addMessage(userMsg);

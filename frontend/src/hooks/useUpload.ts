@@ -82,11 +82,31 @@ export function useUpload(sessionId: string) {
     setUploads((prev) => prev.filter((u) => u.status !== 'success' && u.status !== 'error'));
   }, []);
 
+  const removeUpload = useCallback((id: string) => {
+    setUploads((prev) => prev.filter((u) => u.id !== id));
+  }, []);
+
+  const retryUpload = useCallback((id: string) => {
+    setUploads((prev) => {
+      const item = prev.find((u) => u.id === id);
+      if (!item) return prev;
+      setTimeout(() => {
+        removeUpload(id);
+        if (item.type === 'file' && item.file) uploadFile(item.file);
+        else if (item.type === 'url' && item.url) uploadUrl(item.url);
+        else if (item.type === 'youtube' && item.url) uploadYoutube(item.url);
+      }, 0);
+      return prev;
+    });
+  }, [removeUpload, uploadFile, uploadUrl, uploadYoutube]);
+
   return {
     uploads,
     uploadFile,
     uploadUrl,
     uploadYoutube,
+    removeUpload,
+    retryUpload,
     clearCompleted,
     isUploading: uploads.some((u) => u.status === 'uploading' || u.status === 'processing'),
   };

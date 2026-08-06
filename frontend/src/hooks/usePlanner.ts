@@ -46,13 +46,14 @@ export function usePlanner(sessionId: string) {
   }, []);
 
   const sendMessage = useCallback(
-    (question: string) => {
+    (question: string, attachments?: { name: string; type: string }[]) => {
       if (!question.trim() || isStreaming) return;
 
       const userMsg: ChatMessageUI = {
         id: `msg-${Date.now()}-user`,
         role: 'user',
         content: question.trim(),
+        attachments,
         timestamp: new Date(),
       };
       addMessage(userMsg);

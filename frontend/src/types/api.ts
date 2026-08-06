@@ -132,6 +132,7 @@ export interface ChatMessageUI {
   role: 'user' | 'assistant';
   content: string;
   citations?: Citation[];
+  attachments?: { name: string; type: string }[];
   isStreaming?: boolean;
   isError?: boolean;
   timestamp: Date;

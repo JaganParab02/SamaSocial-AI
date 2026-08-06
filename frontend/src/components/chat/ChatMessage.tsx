@@ -65,6 +65,16 @@ export default function ChatMessage({ message, onRegenerate }: ChatMessageProps)
           {/* User Message Bubble */}
           {isUser ? (
             <div className="bg-[#24262C] hover:bg-[#282B32] text-slate-100 rounded-[20px] px-5 py-3.5 shadow-md border border-slate-700/50 font-reading text-[15px] leading-relaxed whitespace-pre-wrap transition-colors">
+              {message.attachments && message.attachments.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mb-2.5 pb-2 border-b border-slate-700/60">
+                  {message.attachments.map((att, idx) => (
+                    <span key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#181A22] text-xs text-indigo-300 font-mono border border-slate-700 shadow-xs">
+                      <span>{att.type === 'youtube' ? '🎥' : att.type === 'url' ? '🔗' : '📄'}</span>
+                      <span className="truncate max-w-[180px]">{att.name}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
               {message.content}
             </div>
           ) : message.isError ? (

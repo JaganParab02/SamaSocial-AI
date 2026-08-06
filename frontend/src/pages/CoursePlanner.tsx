@@ -2,7 +2,8 @@
  * CoursePlanner — AI SaaS Course Planning Assistant page with 1px split screen and mobile view toggle.
  */
 import { useState } from 'react';
-import { Menu, MessageSquare, BookOpen, Sparkles } from 'lucide-react';
+import { Menu, MessageSquare, BookOpen, Sparkles, CloudUpload } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Topbar from '../components/layout/Topbar';
 import Sidebar from '../components/layout/Sidebar';
 import MobileSidebar from '../components/layout/MobileSidebar';
@@ -20,11 +21,12 @@ export default function CoursePlanner() {
   const { sessionId, createNewSession } = useSession();
   const { messages, isStreaming, sendMessage, stopStreaming, coursePlan, savePlan, isSaving } = usePlanner(sessionId);
   const { sources, isLoading: isLoadingSources, refetch, deleteSource, isDeleting } = useSources(sessionId);
-  const { uploads, uploadFile, uploadUrl, uploadYoutube, isUploading } = useUpload(sessionId);
+  const { uploads, uploadFile, uploadUrl, uploadYoutube, removeUpload, retryUpload, clearCompleted, isUploading } = useUpload(sessionId);
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [mobileTab, setMobileTab] = useState<'chat' | 'plan'>('chat');
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleNewSession = async () => {
     const oldSessionId = sessionId;
@@ -41,6 +43,26 @@ export default function CoursePlanner() {
     if (lastUserMessage && !isStreaming) {
       sendMessage(lastUserMessage.content);
     }
+  };
+
+  const handleDropFiles = (files: FileList) => {
+    if (isUploading || uploads.some((u) => u.status === 'uploading' || u.status === 'processing')) {
+      toast.error('Waiting for current attachments to finish processing');
+      return;
+    }
+    const fileArray = Array.from(files);
+    const currentCount = uploads.length;
+    if (currentCount >= 5) {
+      toast('You can attach up to 5 files at once — remove one to add another.', { icon: '⚠️' });
+      return;
+    }
+    const allowed = 5 - currentCount;
+    if (fileArray.length > allowed) {
+      toast('You can attach up to 5 files at once — remove one to add another.', { icon: '⚠️' });
+    }
+    fileArray.slice(0, allowed).forEach((file) => {
+      uploadFile(file);
+    });
   };
 
   // Proactive intake messages if chat is empty
@@ -104,11 +126,6 @@ export default function CoursePlanner() {
           onDeleteSource={deleteSource}
           onRefreshSources={refetch}
           isDeletingSource={isDeleting}
-          uploads={uploads}
-          isUploading={isUploading}
-          onUploadFile={uploadFile}
-          onUploadUrl={uploadUrl}
-          onUploadYoutube={uploadYoutube}
         />
 
         {/* Mobile Sidebar */}
@@ -120,15 +137,32 @@ export default function CoursePlanner() {
           onDeleteSource={deleteSource}
           onRefreshSources={refetch}
           isDeletingSource={isDeleting}
-          uploads={uploads}
-          isUploading={isUploading}
-          onUploadFile={uploadFile}
-          onUploadUrl={uploadUrl}
-          onUploadYoutube={uploadYoutube}
         />
 
-        {/* Center: AI Chat Area (Visible on desktop or when mobileTab is 'chat') */}
-        <main className={`${mobileTab === 'chat' ? 'flex' : 'hidden md:flex'} flex-col w-full md:w-1/2 xl:w-2/5 min-w-0 border-r border-[var(--border-strong)] bg-[var(--bg-canvas)] z-10 relative`}>
+        {/* Center: AI Chat Area with whole-panel drop target (§1.1) */}
+        <main
+          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragOver(false);
+            if (e.dataTransfer.files?.length) {
+              handleDropFiles(e.dataTransfer.files);
+            }
+          }}
+          className={`${mobileTab === 'chat' ? 'flex' : 'hidden md:flex'} flex-col w-full md:w-1/2 xl:w-2/5 min-w-0 border-r border-[var(--border-strong)] bg-[var(--bg-canvas)] z-10 relative`}
+        >
+          {/* Dashed drop overlay (§1.1) */}
+          {isDragOver && (
+            <div className="absolute inset-0 z-50 bg-[#0B1120]/85 border-2 border-dashed border-indigo-500 flex flex-col items-center justify-center p-6 text-center select-none backdrop-blur-xs pointer-events-none">
+              <div className="w-16 h-16 rounded-full bg-[#1F2437] border border-indigo-500/50 flex items-center justify-center mb-4 shadow-2xl text-indigo-400 animate-bounce">
+                <CloudUpload className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-bold font-heading text-white tracking-wide">Drop to add to this conversation</h3>
+              <p className="text-xs text-slate-400 mt-1">Supports PDF, PPTX, DOCX, and TXT files (max 5 simultaneously)</p>
+            </div>
+          )}
+
           {/* Optional Proactive Intake Header */}
           {messages.length === 0 && (
             <div className="px-4 py-2.5 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] flex items-center justify-between">
@@ -152,8 +186,15 @@ export default function CoursePlanner() {
             onSend={sendMessage}
             onStop={stopStreaming}
             isStreaming={isStreaming}
-            onAttach={() => setIsMobileSidebarOpen(true)}
             placeholder="Instruct the AI to outline, refine, or expand modules…"
+            uploads={uploads}
+            isUploading={isUploading}
+            onUploadFile={uploadFile}
+            onUploadUrl={uploadUrl}
+            onUploadYoutube={uploadYoutube}
+            onRemoveUpload={removeUpload}
+            onRetryUpload={retryUpload}
+            onClearCompleted={clearCompleted}
           />
         </main>
 
