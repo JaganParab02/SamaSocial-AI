@@ -38,11 +38,13 @@ class DocumentPipeline:
         embedding_service: EmbeddingService,
         vectordb_service: VectorStoreService,
         source_service: Any, # SourceService injected
+        llm_client: Optional[Any] = None,
     ):
         self.chunk_service = chunk_service
         self.embedding_service = embedding_service
         self.vectordb = vectordb_service
         self.source_service = source_service
+        self.llm_client = llm_client
         
         # Instantiate parsers once
         self.parsers = {
@@ -51,6 +53,37 @@ class DocumentPipeline:
             SourceType.WEB: WebParser(),
             SourceType.YOUTUBE: YoutubeParser(),
         }
+
+    def _generate_summary(self, text_content: str, source_name: str, source_type: Any) -> Optional[str]:
+        """Generate a concise, engaging summary under 500 words using LLM."""
+        if not self.llm_client or not text_content or not text_content.strip():
+            return None
+        try:
+            logger.debug("Generating AI resource summary for '%s'...", source_name)
+            sample_text = text_content[:15000]  # First ~4000 tokens for efficient summarization
+            type_str = str(source_type.value if hasattr(source_type, "value") else source_type).upper()
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert educational AI assistant. Provide a concise, clear, and high-level summary of the uploaded educational resource. "
+                        "Keep the summary completely under 500 words. Structure it with a brief introduction of what the resource covers, "
+                        "followed by clear bullet points of the most important takeaways and concepts so the learner immediately understands the material."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Please generate a simple yet thorough summary (< 500 words) for the {type_str} resource titled '{source_name}':\n\n{sample_text}",
+                },
+            ]
+            res = self.llm_client.generate(messages, temperature=0.3, max_tokens=750)
+            summary = res.get("content", "").strip() if isinstance(res, dict) else None
+            if summary:
+                logger.info("Generated summary (%d chars) for '%s'.", len(summary), source_name)
+            return summary
+        except Exception as ex:
+            logger.warning("Summary generation failed for '%s': %s", source_name, str(ex))
+            return None
 
     def process_and_index(
         self,
@@ -99,6 +132,13 @@ class DocumentPipeline:
             logger.debug("Step 1/5: Running extraction parser for '%s'...", source_name)
             parser_result = parser.extract(source, **parser_kwargs)
 
+            # Generate AI Summary for uploaded resource
+            generated_summary = self._generate_summary(
+                text_content=parser_result.text_content,
+                source_name=parser_result.source_name or source_name,
+                source_type=source_type,
+            )
+
             # Build formal ParsedDocument intermediate representation
             source_meta = SourceMetadata(
                 source_id=source_id,
@@ -111,7 +151,7 @@ class DocumentPipeline:
                 metadata=source_meta,
                 content=parser_result.text_content,
                 structured_items=parser_result.structured_items,
-                summary=parser_result.summary_placeholder,
+                summary=generated_summary or parser_result.summary_placeholder,
             )
 
             # 3. Chunk extracted text with granular metadata tagging

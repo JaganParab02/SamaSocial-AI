@@ -1,8 +1,8 @@
 /**
- * UploadPanel — Beautiful dropzone supporting files, web URLs, and YouTube inputs with hover animations.
+ * UploadPanel — Pinned bottom dropzone supporting files, web URLs, and YouTube inputs.
  */
-import { useState, useCallback, useRef } from 'react';
-import { Link, Video, X, FileUp, CheckCircle, AlertCircle, Loader2, CloudUpload } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Link, Video, X, FileUp, CheckCircle, AlertCircle, Loader2, CloudUpload, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UploadItem } from '../../types/api';
 
@@ -25,7 +25,20 @@ export default function UploadPanel({ onUploadFile, onUploadUrl, onUploadYoutube
   const [urlInput, setUrlInput] = useState('');
   const [youtubeInput, setYoutubeInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [viewingSummary, setViewingSummary] = useState<{ title: string; type: string; content: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const latest = uploads[uploads.length - 1];
+    if (latest && latest.status === 'success' && latest.result?.summary && !latest.hasShownSummary) {
+      latest.hasShownSummary = true;
+      setViewingSummary({
+        title: latest.result.source_name || latest.file?.name || latest.url || 'Resource Summary',
+        type: latest.result.source_type || latest.type || 'Document',
+        content: latest.result.summary
+      });
+    }
+  }, [uploads]);
 
   const validateFile = (file: File): string | null => {
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -99,56 +112,50 @@ export default function UploadPanel({ onUploadFile, onUploadUrl, onUploadYoutube
   const formatTags = ['PDF', 'PPT', 'DOCX', 'TXT', 'URL', 'YouTube'];
 
   return (
-    <div className="border-t border-slate-800/80 bg-[#0E1526]/90 p-3 shrink-0 shadow-lg">
-      {/* Tab Selector */}
-      <div className="flex bg-[#1F2937] p-1 rounded-xl mb-3 border border-slate-700/60">
+    <div className="bg-[#181A22] border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-2xl shrink-0 select-none m-1 transition-all">
+      {/* Segmented Tab Selector with generous spacing and font size */}
+      <div className="flex bg-[#21242E] p-1.5 rounded-xl mb-4 border border-slate-700/60 shadow-inner">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => { setActiveTab(key); setError(null); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === key
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+                ? 'bg-[#2B2E3C] text-white shadow-md border border-slate-600/60 scale-[1.02]'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
+            <Icon className="w-4 h-4 text-indigo-400 shrink-0" />
+            <span>{label}</span>
           </button>
         ))}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {/* File Dropzone */}
         {activeTab === 'file' && (
-          <motion.div
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
+          <div
             onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`group relative border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center min-h-[135px] ${
+            className={`group relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center min-h-[145px] ${
               isDragOver
-                ? 'border-indigo-500 bg-indigo-500/15 scale-102 shadow-lg shadow-indigo-500/20'
-                : 'border-slate-700/80 hover:border-indigo-500/80 bg-[#111827]/80 hover:bg-indigo-500/5'
+                ? 'border-indigo-500 bg-indigo-500/10'
+                : 'border-slate-700 hover:border-indigo-400 bg-[#1D1F29] hover:bg-[#252834]'
             }`}
           >
-            <motion.div
-              animate={isDragOver ? { scale: [1, 1.15, 1], y: -3 } : {}}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="w-10 h-10 rounded-full bg-indigo-500/10 group-hover:bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center mb-2 transition-colors"
-            >
-              <CloudUpload className="w-5 h-5 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
-            </motion.div>
-            <p className="text-xs font-bold text-slate-200 tracking-wide">
-              Drag & Drop Files <span className="font-normal text-slate-400">or</span> <span className="text-indigo-400 underline">Browse Files</span>
+            <div className="w-11 h-11 rounded-full bg-[#292C3A] border border-slate-600 flex items-center justify-center mb-3 text-indigo-400 shadow-md group-hover:scale-110 transition-transform">
+              <CloudUpload className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-bold text-slate-200 tracking-wide">
+              Drag files or <span className="text-indigo-400 underline decoration-indigo-500/50">Browse</span>
             </p>
 
-            {/* Supported Formats Pill Tags */}
-            <div className="flex flex-wrap justify-center gap-1 mt-2.5">
+            {/* Supported Formats Chips */}
+            <div className="flex flex-wrap justify-center gap-1.5 mt-3">
               {formatTags.map((t) => (
-                <span key={t} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-400 border border-slate-700/50">
+                <span key={t} className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#262833] text-slate-400 border border-slate-700/70">
                   {t}
                 </span>
               ))}
@@ -160,59 +167,59 @@ export default function UploadPanel({ onUploadFile, onUploadUrl, onUploadYoutube
               onChange={(e) => handleFileSelect(e.target.files)}
               className="hidden"
             />
-          </motion.div>
+          </div>
         )}
 
-        {/* URL Upload */}
+        {/* URL Upload with enlarged input box and padded button */}
         {activeTab === 'url' && (
-          <div className="space-y-2 p-1">
-            <p className="text-[11px] text-[#9CA3AF]">Index articles, tutorials, or online documentation directly into vector storage.</p>
-            <div className="flex gap-2">
+          <div className="space-y-3 p-1">
+            <p className="text-xs sm:text-sm font-medium text-slate-300 leading-relaxed">
+              Index web documentation directly into vector storage.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2.5">
               <input
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
-                placeholder="https://example.com/article..."
-                className="flex-1 px-3 py-2 text-xs bg-[#111827] border border-slate-700 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                placeholder="https://example.com/doc..."
+                className="flex-1 px-4 py-3 text-sm bg-[#1A1C25] border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 font-medium focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
                 disabled={isUploading}
               />
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+              <button
                 onClick={handleUrlSubmit}
                 disabled={isUploading || !urlInput.trim()}
-                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs rounded-xl transition-colors shadow-md shadow-indigo-600/20"
+                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500/60 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm rounded-xl transition-all shadow-lg cursor-pointer shrink-0"
               >
                 Index
-              </motion.button>
+              </button>
             </div>
           </div>
         )}
 
-        {/* YouTube Upload */}
+        {/* YouTube Upload with enlarged input box and padded button */}
         {activeTab === 'youtube' && (
-          <div className="space-y-2 p-1">
-            <p className="text-[11px] text-[#9CA3AF]">Extract captions & transcripts instantly from any YouTube video link.</p>
-            <div className="flex gap-2">
+          <div className="space-y-3 p-1">
+            <p className="text-xs sm:text-sm font-medium text-slate-300 leading-relaxed">
+              Extract transcripts instantly from any YouTube video.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2.5">
               <input
                 type="text"
                 value={youtubeInput}
                 onChange={(e) => setYoutubeInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleYoutubeSubmit()}
                 placeholder="https://youtube.com/watch?v=..."
-                className="flex-1 px-3 py-2 text-xs bg-[#111827] border border-slate-700 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all"
+                className="flex-1 px-4 py-3 text-sm bg-[#1A1C25] border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 font-medium focus:outline-none focus:border-indigo-500 transition-all shadow-inner"
                 disabled={isUploading}
               />
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+              <button
                 onClick={handleYoutubeSubmit}
                 disabled={isUploading || !youtubeInput.trim()}
-                className="px-3.5 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-red-600/25"
+                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500/60 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm rounded-xl transition-all shadow-lg cursor-pointer shrink-0"
               >
                 Extract
-              </motion.button>
+              </button>
             </div>
           </div>
         )}
@@ -224,11 +231,11 @@ export default function UploadPanel({ onUploadFile, onUploadUrl, onUploadYoutube
               initial={{ opacity: 0, y: -4, height: 0 }}
               animate={{ opacity: 1, y: 0, height: 'auto' }}
               exit={{ opacity: 0, y: -4, height: 0 }}
-              className="flex items-center gap-2 p-2.5 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300"
+              className="flex items-center gap-2 p-2.5 bg-[var(--error-bg)] border border-[var(--error)] rounded-[var(--radius-md)] text-[var(--text-primary)]"
             >
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-              <p className="text-xs flex-1 font-medium">{error}</p>
-              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">
+              <AlertCircle className="w-4 h-4 text-[var(--error)] shrink-0" />
+              <p className="text-xs flex-1 font-medium text-[var(--error)]">{error}</p>
+              <button onClick={() => setError(null)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer">
                 <X className="w-3.5 h-3.5" />
               </button>
             </motion.div>
@@ -237,26 +244,86 @@ export default function UploadPanel({ onUploadFile, onUploadUrl, onUploadYoutube
 
         {/* Upload Progress List */}
         {uploads.length > 0 && (
-          <div className="space-y-1.5 pt-1 border-t border-slate-800/60">
+          <div className="space-y-1.5 pt-2 border-t border-[var(--border-subtle)]">
             {uploads.slice(-3).map((item) => (
-              <div key={item.id} className="flex items-center gap-2 px-2 py-1 bg-slate-900/60 rounded-lg text-xs border border-slate-800">
+              <div key={item.id} className="flex items-center gap-2 px-2.5 py-1.5 bg-[var(--bg-canvas)] rounded-[var(--radius-sm)] text-xs border border-[var(--border-subtle)]">
                 {item.status === 'uploading' || item.status === 'processing' ? (
-                  <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin shrink-0" />
+                  <Loader2 className="w-3.5 h-3.5 text-[var(--accent-primary)] animate-spin shrink-0" />
                 ) : item.status === 'success' ? (
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <CheckCircle className="w-3.5 h-3.5 text-[var(--success)] shrink-0" />
                 ) : item.status === 'error' ? (
-                  <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                  <AlertCircle className="w-3.5 h-3.5 text-[var(--error)] shrink-0" />
                 ) : null}
-                <span className="text-slate-300 truncate font-medium flex-1 text-[11px]">
-                  {item.file?.name || item.url || 'Processing asset...'}
+                <span className="text-[var(--text-primary)] truncate font-medium flex-1 text-xs">
+                  {item.file?.name || item.url || 'Processing asset…'}
                 </span>
+                {item.status === 'success' && item.result?.summary && (
+                  <button
+                    onClick={() => setViewingSummary({
+                      title: item.result?.source_name || item.file?.name || item.url || 'Resource Summary',
+                      type: item.result?.source_type || item.type || 'Document',
+                      content: item.result?.summary || 'No summary available.'
+                    })}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-[var(--radius-sm)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold text-[11px] border border-[var(--border-strong)] transition-all cursor-pointer shadow-sm"
+                  >
+                    <Sparkles className="w-2.5 h-2.5 text-[var(--accent-primary)]" /> Summary
+                  </button>
+                )}
                 {(item.status === 'uploading' || item.status === 'processing') && (
-                  <span className="text-indigo-400 font-mono text-[10px] font-semibold">{item.progress}%</span>
+                  <span className="text-[var(--accent-primary)] font-mono text-[10px] font-semibold">{item.progress}%</span>
                 )}
               </div>
             ))}
           </div>
         )}
+
+        {/* AI Quick Summary Modal */}
+        <AnimatePresence>
+          {viewingSummary && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm" onClick={() => setViewingSummary(null)}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 8 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-[var(--radius-lg)] max-w-lg w-full p-6 shadow-2xl text-[var(--text-primary)] overflow-hidden relative max-h-[80vh] flex flex-col"
+              >
+                <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4 mb-4 shrink-0">
+                  <div className="flex items-center gap-2.5 overflow-hidden">
+                    <div className="p-2 rounded-[var(--radius-sm)] bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--accent-primary)] shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-heading font-bold text-[var(--text-primary)] truncate">{viewingSummary.title}</h3>
+                      <span className="text-[10px] font-mono text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--bg-canvas)] px-1.5 py-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)]">
+                        {viewingSummary.type} · AI Summary
+                      </span>
+                    </div>
+                  </div>
+                  <button onClick={() => setViewingSummary(null)} aria-label="Close modal" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1 rounded-[var(--radius-sm)] bg-[var(--bg-elevated)] transition-colors cursor-pointer">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                <div className="overflow-y-auto pr-1 space-y-3 text-xs leading-relaxed text-[var(--text-secondary)] font-normal select-text">
+                  <div className="p-4 rounded-[var(--radius-md)] bg-[var(--bg-canvas)] border border-[var(--border-subtle)] shadow-inner whitespace-pre-wrap text-[var(--text-primary)]">
+                    {viewingSummary.content}
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center justify-between pt-3 border-t border-[var(--border-subtle)] shrink-0 text-xs text-[var(--text-tertiary)]">
+                  <span>✨ Summary generated upon indexing</span>
+                  <button
+                    onClick={() => setViewingSummary(null)}
+                    className="px-4 py-1.5 font-semibold text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-[var(--radius-md)] shadow-sm transition-all cursor-pointer"
+                  >
+                    Got it
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

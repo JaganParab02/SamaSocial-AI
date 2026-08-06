@@ -1,5 +1,5 @@
 /**
- * EditableField — Interactive inline click-to-edit UI component for seamless curriculum customization.
+ * EditableField — Interactive inline click-to-edit UI component with ~400ms green autosave flash.
  */
 import { useState, useEffect, useRef } from 'react';
 import { Pencil, Check, X } from 'lucide-react';
@@ -20,11 +20,12 @@ export default function EditableField({
   type = 'text',
   options = [],
   className = '',
-  placeholder = 'Click to edit...',
+  placeholder = 'Click to edit…',
   disabled = false
 }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentVal, setCurrentVal] = useState<string | number>(value || '');
+  const [showSaveFlash, setShowSaveFlash] = useState(false);
   const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement & HTMLSelectElement>(null);
 
   useEffect(() => {
@@ -44,6 +45,9 @@ export default function EditableField({
     setIsEditing(false);
     if (currentVal !== value) {
       onChange(type === 'number' ? Number(currentVal) : currentVal);
+      // Trigger ~400ms green border autosave flash confirmation
+      setShowSaveFlash(true);
+      setTimeout(() => setShowSaveFlash(false), 450);
     }
   };
 
@@ -72,7 +76,7 @@ export default function EditableField({
             onKeyDown={handleKeyDown}
             onBlur={handleSave}
             rows={3}
-            className="w-full bg-slate-950 text-slate-200 text-sm p-2 rounded-lg border border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y leading-relaxed"
+            className="w-full bg-[var(--bg-input)] text-[var(--text-primary)] text-sm p-2 rounded-[var(--radius-sm)] border border-[var(--accent-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-y leading-relaxed font-reading"
             placeholder={placeholder}
           />
         ) : type === 'select' ? (
@@ -81,7 +85,7 @@ export default function EditableField({
             value={currentVal}
             onChange={(e) => setCurrentVal(e.target.value)}
             onBlur={handleSave}
-            className="bg-slate-950 text-slate-200 text-xs px-2 py-1 rounded border border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="bg-[var(--bg-input)] text-[var(--text-primary)] text-xs px-2 py-1 rounded-[var(--radius-sm)] border border-[var(--accent-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] font-medium"
           >
             {options.map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
@@ -95,14 +99,14 @@ export default function EditableField({
             onChange={(e) => setCurrentVal(e.target.value)}
             onKeyDown={handleKeyDown}
             onBlur={handleSave}
-            className="w-full bg-slate-950 text-slate-200 text-sm px-2.5 py-1 rounded-lg border border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full bg-[var(--bg-input)] text-[var(--text-primary)] text-sm px-2.5 py-1 rounded-[var(--radius-sm)] border border-[var(--accent-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] font-medium"
             placeholder={placeholder}
           />
         )}
-        <button onClick={handleSave} onMouseDown={(e) => e.preventDefault()} className="p-1 text-emerald-400 hover:text-emerald-300 transition-colors">
+        <button onClick={handleSave} onMouseDown={(e) => e.preventDefault()} className="p-1.5 text-[var(--success)] hover:opacity-80 transition-opacity cursor-pointer">
           <Check className="w-4 h-4" />
         </button>
-        <button onClick={handleCancel} onMouseDown={(e) => e.preventDefault()} className="p-1 text-red-400 hover:text-red-300 transition-colors">
+        <button onClick={handleCancel} onMouseDown={(e) => e.preventDefault()} className="p-1.5 text-[var(--error)] hover:opacity-80 transition-opacity cursor-pointer">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -112,14 +116,18 @@ export default function EditableField({
   return (
     <div
       onClick={() => !disabled && setIsEditing(true)}
-      className={`group relative inline-flex items-center gap-1.5 hover:bg-slate-800/50 rounded px-1 -mx-1 transition-colors cursor-pointer border border-transparent hover:border-slate-700/60 ${className}`}
-      title={disabled ? undefined : "Click to edit"}
+      className={`group relative inline-flex items-center gap-1.5 hover:bg-[var(--bg-elevated)] rounded-[var(--radius-sm)] px-1 -mx-1 transition-all cursor-pointer border ${
+        showSaveFlash
+          ? 'border-[var(--success)] bg-[var(--bg-elevated)] shadow-[0_0_8px_rgba(46,204,113,0.35)]'
+          : 'border-transparent hover:border-[var(--border-subtle)]'
+      } ${className}`}
+      title={disabled ? undefined : "Click to edit field"}
     >
-      <span className={!value ? 'italic text-slate-500' : ''}>
+      <span className={!value ? 'italic text-[var(--text-tertiary)]' : ''}>
         {value || placeholder}
       </span>
       {!disabled && (
-        <Pencil className="w-3 h-3 text-slate-500 group-hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+        <Pencil className="w-3 h-3 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
       )}
     </div>
   );

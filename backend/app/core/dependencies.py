@@ -104,6 +104,7 @@ def get_document_pipeline() -> DocumentPipeline:
         embedding_service=get_embedding_service(),
         vectordb_service=get_vectordb_service(),
         source_service=get_source_service(),
+        llm_client=get_llm_client(),
     )
 
 

@@ -1,9 +1,9 @@
 /**
- * SourceCard — Premium SaaS source card item displaying file info, status badges, and preview/delete controls.
+ * SourceCard — Source item displaying file info, status badges, and preview/delete controls.
  * Safely resolves properties regardless of Pydantic model vs frontend interface naming conventions.
  */
 import { useState } from 'react';
-import { FileText, Globe, Video, Trash2, Eye, Loader2, CheckCircle2, AlertCircle, FileSpreadsheet } from 'lucide-react';
+import { FileText, Globe, Video, Trash2, Loader2, CheckCircle2, AlertCircle, FileSpreadsheet, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SourceResponse } from '../../types/api';
 
@@ -16,7 +16,6 @@ interface SourceCardProps {
 export default function SourceCard({ source, onDelete, isDeleting }: SourceCardProps) {
   const [showPreview, setShowPreview] = useState(false);
 
-  // Safely resolve properties whether backend returned 'name' or 'source_name', 'type' or 'source_type'
   const sourceName = source?.source_name || source?.name || 'Untitled Document';
   const sourceType = (source?.source_type || source?.type || 'pdf') as string;
   const sourceId = source?.source_id || 'unknown_source';
@@ -33,12 +32,12 @@ export default function SourceCard({ source, onDelete, isDeleting }: SourceCardP
       case 'txt':
         return <FileSpreadsheet className="w-4 h-4 text-amber-400" />;
       case 'youtube':
-        return <Video className="w-4 h-4 text-red-500" />;
+        return <Video className="w-4 h-4 text-red-400" />;
       case 'web':
       case 'url':
         return <Globe className="w-4 h-4 text-blue-400" />;
       default:
-        return <FileText className="w-4 h-4 text-indigo-400" />;
+        return <FileText className="w-4 h-4 text-[var(--accent-primary)]" />;
     }
   };
 
@@ -52,7 +51,7 @@ export default function SourceCard({ source, onDelete, isDeleting }: SourceCardP
       case 'url':
         return 'bg-blue-500/15 text-blue-300 border-blue-500/30';
       default:
-        return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
+        return 'bg-[var(--accent-primary-muted)] text-[var(--accent-primary)] border-[var(--border-strong)]';
     }
   };
 
@@ -62,61 +61,65 @@ export default function SourceCard({ source, onDelete, isDeleting }: SourceCardP
     <>
       <motion.div
         layout
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        whileHover={{ y: -2, scale: 1.01 }}
-        className="group relative p-3 rounded-xl bg-[#1F2937]/90 hover:bg-[#1F2937] border border-slate-700/60 hover:border-indigo-500/50 transition-all shadow-sm hover:shadow-md cursor-pointer mb-2"
+        className="group relative p-3 rounded-[var(--radius-lg)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-all shadow-sm mb-2.5 cursor-pointer"
+        onClick={() => setShowPreview(true)}
       >
         <div className="flex items-start justify-between gap-2.5">
-          <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 shrink-0">
+          <div className="p-2 rounded-[var(--radius-sm)] bg-[var(--bg-canvas)] border border-[var(--border-subtle)] shrink-0">
             {getSourceIcon(sourceType)}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider border ${getBadgeColor(sourceType)}`}>
+              <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-[var(--radius-sm)] uppercase tracking-wider border ${getBadgeColor(sourceType)}`}>
                 {sourceType}
               </span>
               {sourceStatus === 'processing' ? (
-                <span className="flex items-center gap-1 text-[10px] text-amber-400 font-medium">
-                  <Loader2 className="w-2.5 h-2.5 animate-spin" /> Indexing...
+                <span className="flex items-center gap-1 text-[10px] text-[var(--warning)] font-medium">
+                  <Loader2 className="w-2.5 h-2.5 animate-spin" /> Indexing…
                 </span>
               ) : (sourceStatus === 'ready' || sourceStatus === 'completed') ? (
-                <span className="flex items-center gap-0.5 text-[10px] text-emerald-400 font-medium">
+                <span className="flex items-center gap-1 text-[10px] text-[var(--success)] font-medium">
                   <CheckCircle2 className="w-2.5 h-2.5" /> Ready
                 </span>
               ) : (
-                <span className="flex items-center gap-0.5 text-[10px] text-red-400 font-medium">
-                  <AlertCircle className="w-2.5 h-2.5" /> {sourceStatus}
+                <span className="flex items-center gap-1 text-[10px] text-[var(--error)] font-medium">
+                  <AlertCircle className="w-2.5 h-2.5" /> Failed
                 </span>
               )}
             </div>
 
-            <p className="text-xs font-semibold text-slate-100 truncate mt-1" title={sourceName}>
+            <p className="text-xs font-semibold text-[var(--text-primary)] truncate mt-1.5" title={sourceName}>
               {sourceName}
             </p>
 
-            <div className="flex items-center justify-between text-[11px] text-[#9CA3AF] mt-1.5">
+            <div className="flex items-center justify-between font-mono text-[11px] text-[var(--text-secondary)] mt-1">
               <span>
-                {sourceType === 'youtube' || sourceType === 'web' || sourceType === 'url' ? `${chunksCount} vector chunks` : `${estimatedPages} pages (${chunksCount} chunks)`}
+                {sourceType === 'youtube' || sourceType === 'web' || sourceType === 'url' ? `${chunksCount} vector chunks` : `${estimatedPages} pages · ${chunksCount} chunks`}
               </span>
-              <span>Active now</span>
+              <span className="text-[10px] text-[var(--text-tertiary)]">Active</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-1.5 mt-2 pt-2 border-t border-slate-800/60 text-xs">
+        <div className="flex items-center justify-end gap-1.5 mt-2 pt-2 border-t border-[var(--border-subtle)] text-xs">
           <button
             onClick={(e) => { e.stopPropagation(); setShowPreview(true); }}
-            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-300 hover:text-indigo-300 hover:bg-slate-800/80 rounded transition-colors"
+            aria-label="View AI summary"
+            title="Inspect vector summary and details"
+            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--accent-primary)] bg-[var(--bg-canvas)] hover:bg-[var(--accent-primary-muted)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-[var(--radius-sm)] transition-all cursor-pointer"
           >
-            <Eye className="w-3 h-3" /> Preview
+            <Sparkles className="w-3 h-3 text-[var(--accent-primary)]" /> Summary
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(sourceId); }}
             disabled={isDeleting}
-            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+            aria-label="Delete source from knowledge base"
+            title="Remove vector embeddings from Qdrant index"
+            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-[var(--text-tertiary)] hover:text-[var(--error)] bg-[var(--bg-canvas)] hover:bg-[var(--error-bg)] border border-[var(--border-subtle)] hover:border-[var(--error)] rounded-[var(--radius-sm)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="w-3 h-3" /> Delete
           </button>
@@ -125,44 +128,51 @@ export default function SourceCard({ source, onDelete, isDeleting }: SourceCardP
 
       <AnimatePresence>
         {showPreview && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowPreview(false)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm" onClick={() => setShowPreview(false)}>
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              exit={{ scale: 0.94, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl text-slate-200"
+              className="bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-[var(--radius-lg)] max-w-md w-full p-6 shadow-2xl text-[var(--text-primary)]"
             >
-              <div className="flex items-center gap-3 mb-4 border-b border-slate-800 pb-4">
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+              <div className="flex items-center gap-3 mb-4 border-b border-[var(--border-subtle)] pb-4">
+                <div className="p-2.5 rounded-[var(--radius-md)] bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
                   {getSourceIcon(sourceType)}
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <h3 className="text-sm font-bold text-slate-100 truncate">{sourceName}</h3>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5 uppercase tracking-wide">Type: {sourceType}</p>
+                  <h3 className="text-sm font-heading font-bold text-[var(--text-primary)] truncate">{sourceName}</h3>
+                  <p className="text-xs font-mono text-[var(--text-secondary)] mt-0.5 uppercase tracking-wide">Type: {sourceType}</p>
                 </div>
               </div>
-              <div className="space-y-3 text-xs text-slate-300">
-                <div className="flex justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-slate-400">Source ID:</span>
-                  <span className="font-mono text-[11px] bg-slate-900 px-2 py-0.5 rounded text-indigo-300">{sourceId.substring(0, 18)}...</span>
+
+              <div className="space-y-3 text-xs text-[var(--text-secondary)]">
+                <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
+                  <span>Source ID:</span>
+                  <span className="font-mono text-[11px] bg-[var(--bg-canvas)] px-2 py-0.5 rounded-[var(--radius-sm)] text-[var(--accent-primary)]">{sourceId.substring(0, 18)}…</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-slate-400">Indexed Chunks in Qdrant:</span>
-                  <span className="font-semibold text-emerald-400">{chunksCount} Chunks</span>
+                <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
+                  <span>Indexed Chunks in Qdrant:</span>
+                  <span className="font-semibold font-mono text-[var(--success)]">{chunksCount} Chunks</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-slate-400">Status:</span>
-                  <span className="capitalize font-medium text-slate-200">{sourceStatus}</span>
+                <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
+                  <span>Status:</span>
+                  <span className="capitalize font-medium text-[var(--text-primary)]">{sourceStatus}</span>
                 </div>
-                <p className="text-slate-400 pt-2 leading-relaxed">
-                  This resource has been vectorized and stored in Qdrant. Whenever you ask questions in the chat, SamaSocial AI automatically scans these embeddings for grounding and precision citations.
-                </p>
+                <div className="pt-2">
+                  <span className="text-xs font-bold text-[var(--accent-primary)] flex items-center gap-1 mb-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> AI Quick Summary:
+                  </span>
+                  <div className="p-3.5 rounded-[var(--radius-md)] bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--text-primary)] max-h-60 overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-inner font-normal text-xs">
+                    {(source.summary || (source.metadata && source.metadata.summary as string)) || 'This resource was vectorized and indexed into Qdrant for semantic RAG search and citations.'}
+                  </div>
+                </div>
               </div>
+
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={() => setShowPreview(false)}
-                  className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors shadow-lg shadow-indigo-500/25"
+                  className="px-4 py-2 text-xs font-semibold bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-[var(--radius-md)] transition-colors cursor-pointer shadow-sm"
                 >
                   Close Preview
                 </button>

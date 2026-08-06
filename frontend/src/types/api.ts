@@ -146,6 +146,7 @@ export interface UploadItem {
   progress: number;
   error?: string;
   result?: UploadResponse;
+  hasShownSummary?: boolean;
 }
 
 // ─── Planner Types ─────────────────────────────────────────────────────

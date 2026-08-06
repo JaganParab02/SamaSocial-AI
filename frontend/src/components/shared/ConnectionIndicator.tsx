@@ -1,5 +1,5 @@
 /**
- * ConnectionIndicator — shows live backend connection status with pulsing SaaS badge.
+ * ConnectionIndicator — shows live backend connection status with accessible dot and text label.
  */
 import { useQuery } from '@tanstack/react-query';
 import { healthService } from '../../services/healthService';
@@ -16,19 +16,22 @@ export default function ConnectionIndicator() {
   const isConnected = !isError && !!data;
 
   return (
-    <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#1A2234] border border-slate-700/60 shadow-sm text-xs font-medium">
+    <div
+      className="flex items-center gap-2 px-2.5 py-1 rounded-[var(--radius-pill)] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-medium shrink-0"
+      title={isConnected ? 'Backend API operational' : 'Attempting to reconnect to backend API'}
+    >
       {isConnected ? (
         <>
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--success)] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--success)]"></span>
           </span>
-          <span className="text-slate-200 tracking-wide">Connected</span>
+          <span className="text-[var(--text-primary)] tracking-wide">Connected</span>
         </>
       ) : (
         <>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 animate-pulse"></span>
-          <span className="text-red-400 tracking-wide">Disconnected</span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--error)] animate-pulse"></span>
+          <span className="text-[var(--text-secondary)] tracking-wide">Reconnecting…</span>
         </>
       )}
     </div>

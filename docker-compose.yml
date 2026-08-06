@@ -1,11 +1,10 @@
-version: '3.8'
+name: samasocial
 
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: sama_ai_backend
     ports:
       - "8000:8000"
     env_file:
@@ -28,7 +27,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: sama_ai_frontend
     ports:
       - "5173:5173"
     environment:
@@ -40,7 +38,6 @@ services:
 
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: sama_ai_qdrant
     ports:
       - "6333:6333"
       - "6334:6334"

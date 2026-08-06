@@ -61,8 +61,8 @@ class Retriever:
 
         # 2. Build filter conditions
         filters: Dict[str, Any] = {}
-        if source_filter != SourceFilter.ALL:
-            filters["source_type"] = source_filter.value
+        if source_filter != SourceFilter.ALL and source_filter != "all":
+            filters["source_type"] = source_filter.value if hasattr(source_filter, "value") else str(source_filter)
         if session_id:
             filters["session_id"] = session_id
         if source_id:

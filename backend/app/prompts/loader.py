@@ -45,13 +45,25 @@ class PromptLoader:
             Raw unformatted template text string.
         """
         clean_name = filename if filename.endswith(".txt") else f"{filename}.txt"
+        base_name = os.path.basename(clean_name)
         
         if not reload and clean_name in self._cache:
             return self._cache[clean_name]
 
-        file_path = os.path.join(self.prompts_dir, clean_name)
-        if not os.path.exists(file_path):
-            logger.error("Prompt template file not found: %s", file_path)
+        candidate_paths = [
+            os.path.join(self.prompts_dir, clean_name),
+            os.path.join(self.prompts_dir, base_name),
+            os.path.join(os.path.dirname(self.prompts_dir), "planner", "prompts", base_name),
+        ]
+        
+        file_path = None
+        for p in candidate_paths:
+            if os.path.exists(p):
+                file_path = p
+                break
+
+        if not file_path:
+            logger.error("Prompt template file not found across candidate paths: %s", candidate_paths)
             raise FileNotFoundError(f"Missing prompt template file: {clean_name}")
 
         try:
@@ -87,6 +99,13 @@ class PromptLoader:
             for k, v in kwargs.items():
                 result = result.replace(f"{{{k}}}", str(v))
             return result
+
+    def load(self, filename: str, reload: bool = False) -> str:
+        """Alias for load_prompt_text to ensure compatibility across modules."""
+        try:
+            return self.load_prompt_text(filename, reload=reload)
+        except FileNotFoundError:
+            return ""
 
     def clear_cache(self) -> None:
         """Empty the prompt memory cache to force fresh disk reads on next call."""

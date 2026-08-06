@@ -12,6 +12,7 @@ from app.chat.memory_service import MemoryService
 from app.llm.client import LLMClient
 from app.llm.prompt_builder import PromptLoader, PromptBuilder
 from app.rag.retriever import Retriever
+from app.models.chat import SourceFilter
 from app.planner.models import CoursePlan
 from app.planner.schemas import PlannerRequest
 from app.services.recommendation_service import RecommendationService
@@ -51,13 +52,12 @@ class CoursePlannerService:
         """
         Synchronously calls the LLM to generate the updated JSON course plan.
         """
-        prompt_template = self.prompt_loader.load("planner/course_planner_json.txt")
-        if not prompt_template:
-            # Fallback if file missing
-            prompt_template = "Generate a JSON course plan based on the request: {QUESTION}"
-
         system_prompt = self.prompt_loader.build_prompt(
-            "course_planner",
+            "course_planner_json",
+            CONTEXT=context_text,
+            HISTORY=history_text,
+            CURRENT_PLAN=current_plan_str,
+            QUESTION=question,
             context=context_text,
             history=history_text,
             current_plan=current_plan_str,
@@ -143,11 +143,21 @@ class CoursePlannerService:
         
         # 1. Retrieve Context
         # Only search if there are actually uploaded sources linked to the session, or use global
-        context_chunks = self.retriever.search(
+        if request.source_filter == "session":
+            retrieval_filter = SourceFilter.ALL
+            retrieval_session_id = request.session_id
+        else:
+            try:
+                retrieval_filter = SourceFilter(request.source_filter)
+            except ValueError:
+                retrieval_filter = SourceFilter.ALL
+            retrieval_session_id = None
+
+        context_chunks = self.retriever.retrieve(
             query=request.question,
             top_k=5,
-            source_filter=request.source_filter,
-            session_id=request.session_id if request.source_filter == "session" else None
+            source_filter=retrieval_filter,
+            session_id=retrieval_session_id
         )
         
         context_text = ""
@@ -185,12 +195,11 @@ class CoursePlannerService:
         self.memory_service.append(session, role="user", content=request.question)
 
         # 4. Generate Chat Response (Streaming)
-        chat_template = self.prompt_loader.load("planner/course_chat.txt")
-        if not chat_template:
-            chat_template = "Respond conversationally about updating the course plan. {QUESTION}"
-
         chat_system = self.prompt_loader.build_prompt(
             "course_chat",
+            CONTEXT=context_text,
+            HISTORY=history_text,
+            QUESTION=request.question,
             context=context_text,
             history=history_text,
             question=request.question

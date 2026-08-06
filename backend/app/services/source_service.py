@@ -66,6 +66,8 @@ class SourceService:
                 record["processing_time_ms"] = processing_time_ms
             if metadata:
                 record["metadata"].update(metadata)
+                if "summary" in metadata and metadata["summary"]:
+                    record["summary"] = metadata["summary"]
             logger.debug("Updated source '%s' status to '%s' (duration: %.2f ms)", source_id, status, processing_time_ms)
         return record
 

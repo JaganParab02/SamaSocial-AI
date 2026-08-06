@@ -14,8 +14,9 @@ def mock_planner_deps():
     
     # Setup default mock behaviors
     prompt_loader.load.return_value = "Mock Prompt"
+    prompt_loader.build_prompt.return_value = "Mock Prompt"
     memory_service.serialize_for_prompt.return_value = "Mock History"
-    retriever.search.return_value = []
+    retriever.retrieve.return_value = []
     
     return {
         "session_manager": session_manager,

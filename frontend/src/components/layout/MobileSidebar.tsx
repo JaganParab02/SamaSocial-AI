@@ -1,8 +1,8 @@
 /**
- * MobileSidebar — Responsive 280px slide-out mobile drawer with complete upload and source management.
+ * MobileSidebar — Responsive slide-out mobile drawer with complete upload and source management.
  */
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Brain } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 import SourceList from '../upload/SourceList';
 import UploadPanel from '../upload/UploadPanel';
 import type { SourceResponse, UploadItem } from '../../types/api';
@@ -49,24 +49,25 @@ export default function MobileSidebar({
             className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm lg:hidden"
           />
 
-          {/* 280px Drawer Container */}
+          {/* 296px Drawer Container */}
           <motion.aside
-            initial={{ x: -300 }}
+            initial={{ x: -320 }}
             animate={{ x: 0 }}
-            exit={{ x: -300 }}
+            exit={{ x: -320 }}
             transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-            className="fixed left-0 top-0 bottom-0 z-50 w-[280px] bg-[#0B1120] border-r border-slate-800/80 flex flex-col lg:hidden shadow-2xl"
+            className="fixed left-0 top-0 bottom-0 z-50 w-[296px] bg-[var(--bg-surface)] border-r border-[var(--border-subtle)] flex flex-col lg:hidden shadow-2xl"
           >
-            <div className="flex items-center justify-between p-4 border-b border-slate-800/80 bg-[#0E1526]/90">
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-white" />
+                <div className="w-7 h-7 rounded-[var(--radius-sm)] brand-gradient-bg flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-sm font-bold text-slate-100">Knowledge Base</span>
+                <span className="text-sm font-heading font-bold text-[var(--text-primary)]">Knowledge Base</span>
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 text-slate-400 hover:text-slate-200 bg-slate-800/50 hover:bg-slate-800 rounded-lg transition-colors"
+                aria-label="Close sidebar drawer"
+                className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -83,13 +84,15 @@ export default function MobileSidebar({
               />
             </div>
 
-            <UploadPanel
-              onUploadFile={onUploadFile}
-              onUploadUrl={onUploadUrl}
-              onUploadYoutube={onUploadYoutube}
-              uploads={uploads}
-              isUploading={isUploading}
-            />
+            <div className="border-t border-slate-800/80 shrink-0 bg-[#111317] p-2.5 pb-6">
+              <UploadPanel
+                onUploadFile={onUploadFile}
+                onUploadUrl={onUploadUrl}
+                onUploadYoutube={onUploadYoutube}
+                uploads={uploads}
+                isUploading={isUploading}
+              />
+            </div>
           </motion.aside>
         </>
       )}

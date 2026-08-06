@@ -1,8 +1,8 @@
 /**
- * CoursePlanner — Premium AI SaaS Course Planning Assistant page.
+ * CoursePlanner — AI SaaS Course Planning Assistant page with 1px split screen and mobile view toggle.
  */
 import { useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, MessageSquare, BookOpen, Sparkles } from 'lucide-react';
 import Topbar from '../components/layout/Topbar';
 import Sidebar from '../components/layout/Sidebar';
 import MobileSidebar from '../components/layout/MobileSidebar';
@@ -24,6 +24,7 @@ export default function CoursePlanner() {
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'plan'>('chat');
 
   const handleNewSession = async () => {
     const oldSessionId = sessionId;
@@ -42,15 +43,59 @@ export default function CoursePlanner() {
     }
   };
 
+  // Proactive intake messages if chat is empty
+  const defaultIntakeSuggestion = "Design a 4-week introductory curriculum on Machine Learning with hands-on labs and project milestones.";
+
   return (
-    <div className="h-screen flex flex-col bg-[#0B1120] overflow-hidden">
+    <div className="h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] overflow-hidden select-none">
       <Topbar
         sessionId={sessionId}
         pageTitle="AI Course Planning Assistant"
         onNewSession={handleNewSession}
       />
       
-      {/* Main Content */}
+      {/* Mobile Segmented Toggle Strip (Visible on sub-desktop only) */}
+      <div className="md:hidden flex items-center justify-between px-3 py-2 bg-[var(--bg-surface)] border-b border-[var(--border-strong)] z-20">
+        <button
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] rounded-[var(--radius-sm)] border border-[var(--border-subtle)] flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+        >
+          <Menu className="w-4 h-4" />
+          <span>Sources</span>
+        </button>
+
+        {/* Segmented Control (Chat / Plan) */}
+        <div className="inline-flex rounded-[var(--radius-sm)] p-0.5 bg-[var(--bg-input)] border border-[var(--border-subtle)]">
+          <button
+            onClick={() => setMobileTab('chat')}
+            className={`flex items-center gap-1 px-3 py-1 rounded-[calc(var(--radius-sm)-2px)] text-xs font-semibold transition-all cursor-pointer ${
+              mobileTab === 'chat'
+                ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm font-bold'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>AI Chat</span>
+          </button>
+          <button
+            onClick={() => setMobileTab('plan')}
+            className={`flex items-center gap-1 px-3 py-1 rounded-[calc(var(--radius-sm)-2px)] text-xs font-semibold transition-all cursor-pointer ${
+              mobileTab === 'plan'
+                ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-sm font-bold'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Syllabus Plan</span>
+          </button>
+        </div>
+
+        <span className="text-[11px] font-mono font-bold text-[var(--accent-primary)] flex items-center gap-1">
+          <Sparkles className="w-3 h-3" /> Live
+        </span>
+      </div>
+
+      {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Sidebar */}
         <Sidebar
@@ -82,18 +127,20 @@ export default function CoursePlanner() {
           onUploadYoutube={uploadYoutube}
         />
 
-        {/* Center: Chat Area */}
-        <main className="flex flex-col w-full lg:w-1/3 xl:w-2/5 min-w-0 border-r border-slate-800/80 bg-[#0B1120] z-10 relative">
-          <div className="lg:hidden flex items-center px-4 py-2.5 border-b border-slate-800 bg-[#0E1526]">
-            <button
-              onClick={() => setIsMobileSidebarOpen(true)}
-              className="p-1.5 text-slate-300 hover:text-white bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold"
-            >
-              <Menu className="w-4 h-4" />
-              <span>Sources & Uploads</span>
-            </button>
-            <span className="text-xs font-bold text-indigo-400">Syllabus Planner</span>
-          </div>
+        {/* Center: AI Chat Area (Visible on desktop or when mobileTab is 'chat') */}
+        <main className={`${mobileTab === 'chat' ? 'flex' : 'hidden md:flex'} flex-col w-full md:w-1/2 xl:w-2/5 min-w-0 border-r border-[var(--border-strong)] bg-[var(--bg-canvas)] z-10 relative`}>
+          {/* Optional Proactive Intake Header */}
+          {messages.length === 0 && (
+            <div className="px-4 py-2.5 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] flex items-center justify-between">
+              <span className="font-medium">💡 Proactive Intake: Start by defining your goals or audience</span>
+              <button
+                onClick={() => sendMessage(defaultIntakeSuggestion)}
+                className="text-[var(--accent-primary)] hover:underline font-semibold cursor-pointer shrink-0 ml-2"
+              >
+                Use sample prompt →
+              </button>
+            </div>
+          )}
 
           <ChatWindow
             messages={messages}
@@ -106,12 +153,12 @@ export default function CoursePlanner() {
             onStop={stopStreaming}
             isStreaming={isStreaming}
             onAttach={() => setIsMobileSidebarOpen(true)}
-            placeholder="Instruct the AI planner to generate or refine your syllabus..."
+            placeholder="Instruct the AI to outline, refine, or expand modules…"
           />
         </main>
 
-        {/* Right: Live Preview / Editor */}
-        <aside className="hidden md:flex flex-col flex-1 min-w-0 bg-[#0E1526]">
+        {/* Right: Live Curriculum Preview & Editor (Visible on desktop or when mobileTab is 'plan') */}
+        <aside className={`${mobileTab === 'plan' ? 'flex' : 'hidden md:flex'} flex-col flex-1 min-w-0 bg-[var(--bg-surface)]`}>
           {coursePlan && !isEditing ? (
             <CoursePlanPreview 
               plan={coursePlan} 

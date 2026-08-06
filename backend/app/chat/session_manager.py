@@ -58,6 +58,12 @@ class SessionManager:
             sess = self.create_session(session_id=session_id)
         return sess
 
+    def save(self, session: Session) -> Session:
+        """Persist session changes in repository store and update timestamp."""
+        session.updated_at = datetime.now(timezone.utc).isoformat()
+        self._sessions[session.session_id] = session
+        return session
+
     def list_sessions(self) -> List[Session]:
         """Return all tracked user sessions."""
         return list(self._sessions.values())
