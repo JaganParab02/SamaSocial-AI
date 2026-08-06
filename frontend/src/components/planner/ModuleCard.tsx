@@ -19,19 +19,19 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
 
   const getDifficultyColor = (diff: string = 'Beginner') => {
     switch (diff.toLowerCase()) {
-      case 'beginner': return 'bg-[var(--bg-elevated)] text-[var(--success)] border border-[var(--border-subtle)]';
-      case 'intermediate': return 'bg-[var(--bg-elevated)] text-amber-400 border border-[var(--border-subtle)]';
-      case 'advanced': return 'bg-[var(--error-bg)] text-[var(--error)] border border-[var(--error)]';
-      default: return 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]';
+      case 'beginner': return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      case 'intermediate': return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      case 'advanced': return 'bg-red-500/10 text-red-400 border border-red-500/20';
+      default: return 'bg-slate-800 text-slate-300 border border-white/10';
     }
   };
 
   const getResourceIcon = (type: string = 'article') => {
     switch (type.toLowerCase()) {
-      case 'video': return <Video className="w-3.5 h-3.5 text-red-400 shrink-0" />;
-      case 'documentation': return <FileText className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />;
-      case 'github': return <Code className="w-3.5 h-3.5 text-[var(--success)] shrink-0" />;
-      default: return <BookOpen className="w-3.5 h-3.5 text-purple-400 shrink-0" />;
+      case 'video': return <Video className="w-4 h-4 text-red-400 shrink-0" />;
+      case 'documentation': return <FileText className="w-4 h-4 text-indigo-400 shrink-0" />;
+      case 'github': return <Code className="w-4 h-4 text-emerald-400 shrink-0" />;
+      default: return <BookOpen className="w-4 h-4 text-purple-400 shrink-0" />;
     }
   };
 
@@ -87,14 +87,17 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
   };
 
   return (
-    <div className="bg-[var(--bg-surface)] rounded-[var(--radius-lg)] border border-[var(--border-strong)] overflow-hidden transition-all shadow-sm">
+    <div className="bg-[#111827] rounded-[28px] border border-white/5 hover:border-white/10 overflow-hidden transition-all shadow-xl hover:shadow-2xl">
       {/* Module Header Bar */}
-      <div className="p-4 sm:p-5 bg-[var(--bg-elevated)] flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)]">
-        <div className="flex items-center gap-3 min-w-[220px] flex-1">
-          <span className="w-7 h-7 rounded-[var(--radius-sm)] bg-[var(--bg-canvas)] border border-[var(--border-strong)] text-[var(--text-primary)] font-mono font-bold text-xs flex items-center justify-center shrink-0">
-            M{index + 1}
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="p-6 md:p-8 bg-slate-900/40 cursor-pointer flex flex-wrap items-center justify-between gap-4 transition-colors hover:bg-slate-900/60"
+      >
+        <div className="flex items-center gap-4 min-w-[240px] flex-1" onClick={(e) => e.stopPropagation()}>
+          <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-white/5 text-indigo-400 font-mono font-bold text-[14px] flex items-center justify-center shrink-0 shadow-inner">
+            0{index + 1}
           </span>
-          <div className="flex-1 text-sm sm:text-base font-heading font-bold text-[var(--text-primary)] min-w-0">
+          <div className="flex-1 text-[18px] sm:text-[20px] font-bold text-slate-100 min-w-0 tracking-tight">
             <EditableField
               value={module.title}
               onChange={(val) => onUpdate({ ...module, title: String(val) })}
@@ -103,9 +106,10 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <span className={`px-2.5 py-0.5 rounded-[var(--radius-sm)] text-[11px] font-mono font-semibold ${getDifficultyColor(module.difficulty)}`}>
+        <div className="flex items-center gap-4 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-3">
+            <span className={`inline-flex items-center px-3.5 py-1 rounded-full text-[13px] font-semibold ${getDifficultyColor(module.difficulty)}`}>
+              <span className="mr-1.5">{module.difficulty?.toLowerCase() === 'advanced' ? '🔴' : module.difficulty?.toLowerCase() === 'intermediate' ? '🟡' : '🟢'}</span>
               <EditableField
                 value={module.difficulty}
                 onChange={(val) => onUpdate({ ...module, difficulty: String(val) })}
@@ -113,41 +117,51 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
                 options={['Beginner', 'Intermediate', 'Advanced']}
               />
             </span>
-            <span className="px-2.5 py-0.5 bg-[var(--bg-canvas)] rounded-[var(--radius-sm)] text-xs text-[var(--text-secondary)] font-mono font-medium border border-[var(--border-subtle)]">
+            <span className="px-3.5 py-1 bg-slate-800/60 rounded-full text-[13px] text-slate-300 font-mono font-medium flex items-center gap-1.5">
               <EditableField
                 value={module.estimated_duration_hours}
                 onChange={(val) => onUpdate({ ...module, estimated_duration_hours: Number(val) })}
                 type="number"
-              /> hrs
+              /> 
+              <span className="text-slate-500 font-sans">hrs</span>
             </span>
           </div>
 
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            aria-expanded={isExpanded}
-            className="p-1.5 hover:bg-[var(--bg-canvas)] rounded-[var(--radius-sm)] text-[var(--text-secondary)] transition-colors cursor-pointer"
-            title={isExpanded ? "Collapse Module" : "Expand Module"}
-            aria-label={isExpanded ? "Collapse module" : "Expand module"}
-          >
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-1 border-l border-white/5 pl-3">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              aria-expanded={isExpanded}
+              className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+              title={isExpanded ? "Collapse Module" : "Expand Module"}
+              aria-label={isExpanded ? "Collapse module" : "Expand module"}
+            >
+              {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
 
-          <button
-            onClick={onDelete}
-            aria-label="Delete module"
-            className="p-1.5 hover:bg-[var(--error-bg)] text-[var(--text-tertiary)] hover:text-[var(--error)] rounded-[var(--radius-sm)] transition-colors cursor-pointer"
-            title="Delete Entire Module"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+            <button
+              onClick={onDelete}
+              aria-label="Delete module"
+              className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded-xl transition-colors cursor-pointer"
+              title="Delete Entire Module"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* When collapsed, show Description preview! */}
+      {!isExpanded && module.description && (
+        <div className="px-8 pb-6 text-[15px] text-slate-400 font-normal line-clamp-2 leading-relaxed">
+          {module.description}
+        </div>
+      )}
+
       {/* Expanded Accordion Content */}
       {isExpanded && (
-        <div className="p-5 sm:p-6 space-y-6 bg-[var(--bg-surface)]">
+        <div className="p-6 md:p-8 space-y-10 bg-[#111827]">
           {/* Module Description */}
-          <div className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed font-reading bg-[var(--bg-input)] p-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
+          <div className="text-[15px] text-slate-300 leading-relaxed bg-slate-900/30 p-5 rounded-2xl border border-white/5 font-medium">
             <EditableField
               value={module.description}
               onChange={(val) => onUpdate({ ...module, description: String(val) })}
@@ -157,32 +171,32 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
           </div>
 
           {/* Learning Objectives */}
-          <div>
-            <div className="flex items-center justify-between mb-2.5">
-              <h4 className="text-xs font-heading font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-                <Target className="w-3.5 h-3.5 text-[var(--accent-primary)]" /> Module Objectives
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[14px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <Target className="w-4 h-4 text-indigo-400" /> Objectives
               </h4>
               <button
                 onClick={addObjective}
-                className="text-xs text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] px-2 py-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-[13px] text-slate-300 hover:text-indigo-400 hover:bg-indigo-500/10 px-3 py-1.5 rounded-xl font-medium flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                <Plus className="w-3 h-3 text-[var(--accent-primary)]" />
+                <Plus className="w-4 h-4" />
                 <span>Add Objective</span>
               </button>
             </div>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {(module.objectives || []).map((obj, idx) => (
-                <li key={idx} className="bg-[var(--bg-input)] p-2.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-primary)] group">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-[var(--accent-primary)] font-bold shrink-0">•</span>
+                <li key={idx} className="bg-slate-900/50 p-4 rounded-2xl border border-transparent hover:border-white/5 flex items-center justify-between text-[14px] text-slate-200 group transition-all">
+                  <div className="flex items-center gap-3 flex-1 min-w-0 font-medium">
+                    <span className="text-indigo-400 font-bold shrink-0">•</span>
                     <EditableField
                       value={obj}
                       onChange={(val) => updateObjective(idx, String(val))}
                       className="flex-1 min-w-0"
                     />
                   </div>
-                  <button onClick={() => deleteObjective(idx)} aria-label="Delete objective" className="text-[var(--text-tertiary)] hover:text-[var(--error)] opacity-0 group-hover:opacity-100 p-1 shrink-0 transition-opacity cursor-pointer">
-                    <Trash2 className="w-3.5 h-3.5" />
+                  <button onClick={() => deleteObjective(idx)} aria-label="Delete objective" className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 p-1.5 shrink-0 transition-opacity cursor-pointer">
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </li>
               ))}
@@ -190,16 +204,16 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
           </div>
 
           {/* Lessons Section */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-xs font-heading font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-[var(--accent-primary)]" /> Structured Lessons
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[14px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-indigo-400" /> Structured Lessons
               </h4>
               <button
                 onClick={addLesson}
-                className="text-xs bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] px-2.5 py-1 rounded-[var(--radius-sm)] border border-[var(--border-strong)] font-heading font-bold flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+                className="text-[13px] bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 px-4 py-2 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                <Plus className="w-4 h-4" />
                 <span>New Lesson</span>
               </button>
             </div>
@@ -214,7 +228,7 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
                 />
               ))}
               {(module.lessons || []).length === 0 && (
-                <p className="text-xs text-[var(--text-tertiary)] italic py-3 text-center border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-md)]">
+                <p className="text-[14px] text-slate-500 italic py-6 text-center bg-slate-900/30 rounded-2xl">
                   No lessons planned in this module yet. Click "New Lesson" to add one!
                 </p>
               )}
@@ -222,25 +236,39 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
           </div>
 
           {/* Recommended Public Resources */}
-          <div>
-            <div className="flex items-center justify-between mb-2.5">
-              <h4 className="text-xs font-heading font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-                <ExternalLink className="w-3.5 h-3.5 text-[var(--accent-primary)]" /> Recommended Resources
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[14px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <ExternalLink className="w-4 h-4 text-indigo-400" /> Recommended Resources
               </h4>
               <button
                 onClick={addResource}
-                className="text-xs text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] px-2 py-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-[13px] text-slate-300 hover:text-indigo-400 hover:bg-indigo-500/10 px-3 py-1.5 rounded-xl font-medium flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                <Plus className="w-3 h-3 text-[var(--accent-primary)]" />
+                <Plus className="w-4 h-4" />
                 <span>Add Resource</span>
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {(module.resources || []).map((res, idx) => (
-                <div key={idx} className="bg-[var(--bg-input)] p-3 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs group">
-                  <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
-                    {getResourceIcon(res.type)}
-                    <div className="truncate flex-1 min-w-0">
+                <div key={idx} className="bg-slate-900/60 hover:bg-slate-800/80 p-5 rounded-2xl border border-white/5 flex flex-col justify-between gap-4 transition-all group/res shadow-md">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="p-2.5 rounded-xl bg-slate-800/80 border border-white/5 text-indigo-400">
+                      {getResourceIcon(res.type)}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {res.url && (
+                        <a href={res.url} target="_blank" rel="noopener noreferrer" aria-label="Open reference link" className="p-1.5 text-slate-400 hover:text-slate-100 transition-colors">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+                      <button onClick={() => deleteResource(idx)} aria-label="Delete resource" className="p-1.5 text-slate-600 hover:text-red-400 opacity-0 group-hover/res:opacity-100 transition-opacity cursor-pointer">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[15px] text-slate-200 truncate">
                       <EditableField
                         value={res.title}
                         onChange={(val) => {
@@ -248,29 +276,19 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
                           next[idx] = { ...res, title: String(val) };
                           onUpdate({ ...module, resources: next });
                         }}
-                        className="font-heading font-bold text-[var(--text-primary)] truncate"
+                        className="font-bold text-slate-100 truncate"
                       />
-                      <div className="text-[11px] text-[var(--text-tertiary)] truncate mt-0.5 font-mono">
-                        <EditableField
-                          value={res.url || 'https://'}
-                          onChange={(val) => {
-                            const next = [...(module.resources || [])];
-                            next[idx] = { ...res, url: String(val) };
-                            onUpdate({ ...module, resources: next });
-                          }}
-                        />
-                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {res.url && (
-                      <a href={res.url} target="_blank" rel="noopener noreferrer" aria-label="Open reference link" className="p-1 text-[var(--text-tertiary)] hover:text-[var(--accent-primary)] transition-colors">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                    <button onClick={() => deleteResource(idx)} aria-label="Delete resource" className="p-1 text-[var(--text-tertiary)] hover:text-[var(--error)] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="text-[12px] text-slate-500 truncate mt-1 font-mono">
+                      <EditableField
+                        value={res.url || 'https://'}
+                        onChange={(val) => {
+                          const next = [...(module.resources || [])];
+                          next[idx] = { ...res, url: String(val) };
+                          onUpdate({ ...module, resources: next });
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -279,23 +297,23 @@ export default function ModuleCard({ module, index, onUpdate, onDelete }: Module
 
           {/* Projects & Assessments */}
           {((module.projects || []).length > 0 || (module.assessments || []).length > 0) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-[var(--border-subtle)]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5">
               {(module.projects || []).map((p, i) => (
-                <div key={i} className="bg-[var(--bg-input)] p-3 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] text-xs">
-                  <div className="font-heading font-bold text-[var(--accent-primary)] flex items-center gap-1.5 mb-1">
-                    <Award className="w-3.5 h-3.5" />
+                <div key={i} className="bg-slate-900/50 p-5 rounded-2xl border border-white/5 space-y-2">
+                  <div className="font-bold text-amber-400 text-[14px] flex items-center gap-2">
+                    <Award className="w-4 h-4" />
                     <span>Project: {p.title} ({p.difficulty})</span>
                   </div>
-                  <p className="text-[var(--text-secondary)] font-reading">{p.description}</p>
+                  <p className="text-slate-400 text-[14px] leading-relaxed font-medium">{p.description}</p>
                 </div>
               ))}
               {(module.assessments || []).map((a, i) => (
-                <div key={i} className="bg-[var(--bg-input)] p-3 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] text-xs">
-                  <div className="font-heading font-bold text-[var(--accent-primary)] flex items-center gap-1.5 mb-1">
-                    <Target className="w-3.5 h-3.5" />
+                <div key={i} className="bg-slate-900/50 p-5 rounded-2xl border border-white/5 space-y-2">
+                  <div className="font-bold text-indigo-400 text-[14px] flex items-center gap-2">
+                    <Target className="w-4 h-4" />
                     <span>Assessment: {a.title} ({a.type})</span>
                   </div>
-                  <p className="text-[var(--text-secondary)] font-reading">{a.description}</p>
+                  <p className="text-slate-400 text-[14px] leading-relaxed font-medium">{a.description}</p>
                 </div>
               ))}
             </div>
