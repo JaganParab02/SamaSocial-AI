@@ -1,47 +1,61 @@
 /**
- * Sidebar — 296px responsive SaaS sidebar with categorized navigation tabs and source management.
+ * Sidebar — 296px responsive SaaS sidebar displaying persistent chat history from Supabase.
  */
 import { useState } from 'react';
-import { PanelLeftClose, PanelLeft, Database, Clock, Layers } from 'lucide-react';
-import SourceList from '../upload/SourceList';
-import type { SourceResponse, UploadItem } from '../../types/api';
+import { PanelLeftClose, PanelLeft, Clock, MessageSquare, BookOpen, Trash2, Search } from 'lucide-react';
+import type { ConversationRecord } from '../../services/conversationService';
 
 interface SidebarProps {
-  sources: SourceResponse[];
-  isLoadingSources: boolean;
-  onDeleteSource: (sourceId: string) => void;
-  onRefreshSources: () => void;
-  isDeletingSource: boolean;
-  uploads?: UploadItem[];
-  isUploading?: boolean;
-  onUploadFile?: (file: File) => Promise<unknown>;
-  onUploadUrl?: (url: string) => Promise<unknown>;
-  onUploadYoutube?: (url: string) => Promise<unknown>;
-  focusUploadTrigger?: number;
+  conversations: ConversationRecord[];
+  isLoading: boolean;
+  activeSessionId: string;
+  onSelectConversation: (sessionId: string) => void;
+  onDeleteConversation: (sessionId: string) => void;
 }
 
-type SectionTab = 'sources' | 'recent' | 'collections';
+function timeAgo(dateStr: string): string {
+  const now = new Date();
+  const then = new Date(dateStr);
+  const diffMs = now.getTime() - then.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export default function Sidebar({
-  sources,
-  isLoadingSources,
-  onDeleteSource,
-  onRefreshSources,
-  isDeletingSource,
+  conversations,
+  isLoading,
+  activeSessionId,
+  onSelectConversation,
+  onDeleteConversation,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeSection, setActiveSection] = useState<SectionTab>('sources');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const navItems: { key: SectionTab; label: string; icon: typeof Database }[] = [
-    { key: 'sources', label: 'Sources', icon: Database },
-    { key: 'recent', label: 'Recent', icon: Clock },
-    { key: 'collections', label: 'Collections', icon: Layers },
-  ];
+  const filtered = searchQuery
+    ? conversations.filter(
+        (c) =>
+          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (c.last_message_preview || '').toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : conversations;
 
-  // Sort by newest for "Recent"
-  const displayedSources = activeSection === 'recent'
-    ? [...sources].reverse()
-    : sources;
+  const handleDelete = async (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    setDeletingId(sessionId);
+    try {
+      await onDeleteConversation(sessionId);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <>
@@ -55,80 +69,127 @@ export default function Sidebar({
       >
         {isCollapsed ? <PanelLeft className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
       </button>
-      {/* Responsive Sidebar: 296px default, collapses to 64px icon rail on desktop when collapsed */}
+
+      {/* Responsive Sidebar */}
       <aside
         className={`bg-[#141519] border-r border-slate-800/70 flex flex-col h-full transition-all duration-250 shrink-0 select-none ${
           isCollapsed ? 'w-[64px] overflow-hidden' : 'w-[296px]'
         } hidden lg:flex z-20 text-slate-200`}
       >
-        {/* Section Nav Strip (Sources, Recent, Collections) */}
+        {/* Header Strip */}
         {isCollapsed ? (
-          <div className="py-3 flex flex-col items-center gap-2.5 border-b border-slate-800/60 shrink-0">
-            {navItems.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => { setActiveSection(key); setIsCollapsed(false); }}
-                title={label}
-                aria-label={`View ${label}`}
-                className={`p-2.5 rounded-xl transition-colors cursor-pointer ${
-                  activeSection === key ? 'bg-[#252831] text-indigo-400 border border-slate-700/60' : 'text-slate-400 hover:text-white hover:bg-[#1E2027]'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-              </button>
-            ))}
+          <div className="py-4 flex flex-col items-center border-b border-slate-800/60 shrink-0">
+            <button
+              onClick={() => setIsCollapsed(false)}
+              title="Chat History"
+              className="p-2.5 rounded-xl transition-colors cursor-pointer text-indigo-400 bg-[#252831] border border-slate-700/60"
+            >
+              <Clock className="w-4 h-4" />
+            </button>
           </div>
         ) : (
-          <div className="px-2.5 pt-2.5 pb-2 border-b border-slate-800/60 flex items-center justify-between gap-1 shrink-0">
-            {navItems.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveSection(key)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                  activeSection === key
-                    ? 'bg-[#252832] text-white shadow-sm border border-slate-700/60'
-                    : 'text-slate-400 hover:text-white hover:bg-[#1E2027]'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 text-indigo-400" />
-                <span>{label}</span>
-              </button>
-            ))}
+          <div className="px-4 py-3.5 border-b border-slate-800/60 flex items-center gap-2 shrink-0">
+            <Clock className="w-4 h-4 text-indigo-400" />
+            <span className="text-sm font-semibold text-slate-200">Chat History</span>
           </div>
         )}
 
-        {/* Dynamic Section Content with internal scrollable boundary (min-h-0) */}
-        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
-          {activeSection === 'collections' && !isCollapsed ? (
-            <div className="p-6 text-center my-auto space-y-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 mx-auto flex items-center justify-center text-indigo-400 shadow-inner">
-                <Layers className="w-5 h-5" />
-              </div>
-              <h4 className="text-xs font-heading font-semibold text-white">Smart Collections</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Organize uploaded documents and videos into structured topic collections.
-              </p>
-              <button
-                onClick={() => setActiveSection('sources')}
-                className="mt-2 px-3.5 py-1.5 bg-[#262932] hover:bg-[#31343F] text-slate-200 rounded-xl border border-slate-700 text-xs font-medium transition-colors cursor-pointer"
-              >
-                View active sources
-              </button>
+        {!isCollapsed && (
+          <div className="px-3 py-3 shrink-0">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search history…"
+                className="w-full pl-8 pr-3 py-2 bg-[#1C1E24] border border-slate-700/50 rounded-lg text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 transition-all"
+              />
             </div>
-          ) : !isCollapsed ? (
-            <SourceList
-              sources={displayedSources}
-              isLoading={isLoadingSources}
-              onDelete={onDeleteSource}
-              onRefresh={onRefreshSources}
-              isDeleting={isDeletingSource}
-            />
-          ) : (
+          </div>
+        )}
+
+        {/* Dynamic Section Content */}
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-3 space-y-1">
+          {isCollapsed ? (
             <div className="py-4 flex flex-col items-center text-center my-auto">
-              <span className="text-[11px] font-mono text-slate-500 -rotate-90 whitespace-nowrap tracking-widest">
-                {sources.length} SOURCES
+              <span className="text-[10px] font-mono text-slate-500 -rotate-90 whitespace-nowrap tracking-widest mt-8">
+                {conversations.length} CHATS
               </span>
             </div>
+          ) : isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+              <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-3" />
+              <span className="text-xs">Loading history…</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-500 text-center px-4">
+              <MessageSquare className="w-6 h-6 text-slate-600 mb-2" />
+              <span className="text-xs font-medium text-slate-400">
+                {searchQuery ? 'No matches found' : 'No conversations yet'}
+              </span>
+            </div>
+          ) : (
+            filtered.map((conv) => {
+              const isActive = conv.session_id === activeSessionId;
+              const isBeingDeleted = deletingId === conv.session_id;
+
+              return (
+                <button
+                  key={conv.id}
+                  onClick={() => onSelectConversation(conv.session_id)}
+                  disabled={isBeingDeleted}
+                  className={`w-full text-left p-2.5 rounded-xl transition-all cursor-pointer group relative flex flex-col ${
+                    isActive
+                      ? 'bg-indigo-500/10 border-indigo-500/20'
+                      : 'hover:bg-[#1C1E26]'
+                  } ${isBeingDeleted ? 'opacity-40' : ''}`}
+                >
+                  <div className="flex items-start justify-between gap-2 w-full">
+                    <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
+                        conv.mode === 'planner'
+                          ? 'bg-purple-500/10 text-purple-400'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {conv.mode === 'planner'
+                          ? <BookOpen className="w-3.5 h-3.5" />
+                          : <MessageSquare className="w-3.5 h-3.5" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[13px] font-semibold truncate ${
+                            isActive ? 'text-indigo-300' : 'text-slate-200'
+                          }`}>
+                            {conv.title}
+                          </span>
+                        </div>
+                        {conv.last_message_preview && (
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5 leading-relaxed">
+                            {conv.last_message_preview}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] text-slate-600 font-mono">
+                            {timeAgo(conv.updated_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      onClick={(e) => handleDelete(e, conv.session_id)}
+                      className="p-1 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 opacity-30 group-hover:opacity-100 transition-all shrink-0 cursor-pointer"
+                      aria-label="Delete conversation"
+                      title="Delete conversation"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
       </aside>

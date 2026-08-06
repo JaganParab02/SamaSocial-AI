@@ -50,10 +50,10 @@ export default function ChatMessage({ message, onRegenerate }: ChatMessageProps)
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18 }}
-      className={`w-full py-3.5 px-4 sm:px-6 flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`w-full py-3.5 px-4 sm:px-6 flex justify-center ${isUser ? 'mt-4' : ''}`}
     >
-      <div className={`flex gap-3.5 max-w-[780px] w-full mx-auto ${isUser ? 'justify-end' : 'justify-start'}`}>
-        {/* Assistant Minimal Avatar (Left) */}
+      <div className={`flex gap-4 max-w-[780px] w-full mx-auto ${isUser ? 'justify-end' : 'justify-start'}`}>
+        {/* Avatar (Left) - Only for Assistant */}
         {!isUser && (
           <div className="w-7 h-7 rounded-full bg-[#26282E] border border-slate-700/70 flex items-center justify-center shrink-0 text-indigo-400 shadow-sm mt-0.5">
             {message.isError ? <AlertCircle className="w-4 h-4 text-red-400" /> : <Bot className="w-4 h-4" />}
@@ -61,12 +61,12 @@ export default function ChatMessage({ message, onRegenerate }: ChatMessageProps)
         )}
 
         {/* Message Content Container */}
-        <div className={`flex-1 min-w-0 ${isUser ? 'max-w-[85%] md:max-w-[75%]' : 'w-full'}`}>
-          {/* User Message Bubble */}
+        <div className={`flex flex-col min-w-0 ${isUser ? 'flex-1 items-end' : 'flex-1 w-full'}`}>
+          {/* User Message */}
           {isUser ? (
-            <div className="bg-[#24262C] hover:bg-[#282B32] text-slate-100 rounded-[20px] px-5 py-3.5 shadow-md border border-slate-700/50 font-reading text-[15px] leading-relaxed whitespace-pre-wrap transition-colors">
+            <div className="bg-[#2f2f2f] text-slate-100 rounded-3xl px-5 py-3 shadow-sm font-reading text-[15px] leading-relaxed whitespace-pre-wrap max-w-[85%] md:max-w-[75%]">
               {message.attachments && message.attachments.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 mb-2.5 pb-2 border-b border-slate-700/60">
+                <div className="flex flex-wrap items-center gap-1.5 mb-2 pb-2 border-b border-slate-700/60">
                   {message.attachments.map((att, idx) => (
                     <span key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#181A22] text-xs text-indigo-300 font-mono border border-slate-700 shadow-xs">
                       <span>{att.type === 'youtube' ? '🎥' : att.type === 'url' ? '🔗' : '📄'}</span>

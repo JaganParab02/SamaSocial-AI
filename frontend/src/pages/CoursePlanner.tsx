@@ -7,22 +7,19 @@ import toast from 'react-hot-toast';
 import Topbar from '../components/layout/Topbar';
 import Sidebar from '../components/layout/Sidebar';
 import MobileSidebar from '../components/layout/MobileSidebar';
-import ConversationSidebar from '../components/layout/ConversationSidebar';
 import ChatWindow from '../components/chat/ChatWindow';
 import ChatInput from '../components/chat/ChatInput';
 import CoursePlanPreview from '../components/planner/CoursePlanPreview';
 import CourseEditor from '../components/planner/CourseEditor';
 import { useSession } from '../hooks/useSession';
 import { usePlanner } from '../hooks/usePlanner';
-import { useSources } from '../hooks/useSources';
 import { useUpload } from '../hooks/useUpload';
 import { useConversations } from '../hooks/useConversations';
 import { chatService } from '../services/chatService';
 
 export default function CoursePlanner() {
   const { sessionId, createNewSession, restoreSession } = useSession();
-  const { messages, isStreaming, sendMessage, stopStreaming, coursePlan, savePlan, isSaving } = usePlanner(sessionId);
-  const { sources, isLoading: isLoadingSources, refetch, deleteSource, isDeleting } = useSources(sessionId);
+  const { messages, isStreaming, sendMessage, stopStreaming, coursePlan, savePlan, isSaving, isLoadingHistory } = usePlanner(sessionId);
   const { uploads, uploadFile, uploadUrl, uploadYoutube, removeUpload, retryUpload, clearCompleted, isUploading } = useUpload(sessionId);
   const { conversations, isLoading: isLoadingConversations, refetch: refetchConversations, deleteConversation } = useConversations();
   
@@ -30,7 +27,6 @@ export default function CoursePlanner() {
   const [isEditing, setIsEditing] = useState(false);
   const [mobileTab, setMobileTab] = useState<'chat' | 'plan'>('chat');
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const handleNewSession = async () => {
     const oldSessionId = sessionId;
@@ -92,23 +88,10 @@ export default function CoursePlanner() {
 
   return (
     <div className="h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] overflow-hidden select-none">
-      {/* Conversation History Drawer */}
-      <ConversationSidebar
-        isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
-        conversations={conversations}
-        isLoading={isLoadingConversations}
-        activeSessionId={sessionId}
-        onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewSession}
-        onDeleteConversation={handleDeleteConversation}
-      />
-
       <Topbar
         sessionId={sessionId}
         pageTitle="AI Course Planning Assistant"
         onNewSession={handleNewSession}
-        onToggleHistory={() => { setIsHistoryOpen(true); refetchConversations(); }}
       />
       
       {/* Mobile Segmented Toggle Strip (Visible on sub-desktop only) */}
@@ -118,7 +101,7 @@ export default function CoursePlanner() {
           className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-elevated)] rounded-[var(--radius-sm)] border border-[var(--border-subtle)] flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
         >
           <Menu className="w-4 h-4" />
-          <span>Sources</span>
+          <span>Chat History</span>
         </button>
 
         {/* Segmented Control (Chat / Plan) */}
@@ -156,22 +139,21 @@ export default function CoursePlanner() {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop Sidebar */}
         <Sidebar
-          sources={sources}
-          isLoadingSources={isLoadingSources}
-          onDeleteSource={deleteSource}
-          onRefreshSources={refetch}
-          isDeletingSource={isDeleting}
+          conversations={conversations}
+          isLoading={isLoadingConversations}
+          activeSessionId={sessionId}
+          onSelectConversation={handleSelectConversation}
+          onDeleteConversation={handleDeleteConversation}
         />
 
-        {/* Mobile Sidebar */}
         <MobileSidebar
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
-          sources={sources}
-          isLoadingSources={isLoadingSources}
-          onDeleteSource={deleteSource}
-          onRefreshSources={refetch}
-          isDeletingSource={isDeleting}
+          conversations={conversations}
+          isLoading={isLoadingConversations}
+          activeSessionId={sessionId}
+          onSelectConversation={handleSelectConversation}
+          onDeleteConversation={handleDeleteConversation}
         />
 
         {/* Center: AI Chat Area with whole-panel drop target (§1.1) */}
@@ -195,6 +177,15 @@ export default function CoursePlanner() {
               </div>
               <h3 className="text-lg font-bold font-heading text-white tracking-wide">Drop to add to this conversation</h3>
               <p className="text-xs text-slate-400 mt-1">Supports PDF, PPTX, DOCX, and TXT files (max 5 simultaneously)</p>
+            </div>
+          )}
+
+          {/* Loading indicator when restoring conversation */}
+          {isLoadingHistory && (
+            <div className="absolute inset-0 z-40 bg-[var(--bg-canvas)]/80 backdrop-blur-sm flex flex-col items-center justify-center">
+              <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-[var(--text-primary)] tracking-wide">Restoring Planner...</h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">Retrieving your course plan history</p>
             </div>
           )}
 

@@ -112,7 +112,7 @@ export default function ChatWindow({ messages, isStreaming, onSuggestionClick, o
         onScroll={handleScroll}
         className="h-full overflow-y-auto pt-4 pb-6"
       >
-        <div className="max-w-[780px] mx-auto space-y-3">
+        <div className="w-full space-y-6">
           {messages.map((msg, index) => (
             <ChatMessage
               key={msg.id}

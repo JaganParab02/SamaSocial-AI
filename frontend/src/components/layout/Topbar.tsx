@@ -2,27 +2,23 @@
  * Topbar — Minimalist header styled after Claude UI with understated mode tabs, editable conversation title, and refined action controls.
  */
 import { useState, useEffect, useRef } from 'react';
-import { Pencil, Check, User, Sparkles, Settings, LogOut, MessageSquare, BookOpen, ChevronDown, History, Share2 } from 'lucide-react';
+import { Pencil, Check, User, Sparkles, Settings, LogOut, MessageSquare, BookOpen, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ConnectionIndicator from '../shared/ConnectionIndicator';
-import toast from 'react-hot-toast';
 
 interface TopbarProps {
   sessionId: string;
   pageTitle: string;
   onNewSession: () => void;
-  onToggleHistory?: () => void;
 }
 
-export default function Topbar({ sessionId, pageTitle, onNewSession, onToggleHistory }: TopbarProps) {
+export default function Topbar({ sessionId, pageTitle, onNewSession }: TopbarProps) {
   const [title, setTitle] = useState('Untitled Conversation');
   const [isEditing, setIsEditing] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  const historyRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const isPlannerMode = location.pathname.includes('/course-planner');
@@ -55,9 +51,6 @@ export default function Topbar({ sessionId, pageTitle, onNewSession, onToggleHis
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
-      }
-      if (historyRef.current && !historyRef.current.contains(event.target as Node)) {
-        setShowHistoryDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -106,8 +99,8 @@ export default function Topbar({ sessionId, pageTitle, onNewSession, onToggleHis
         </div>
       </div>
 
-      {/* Center: Inline Editable Conversation Title with Dropdown (Claude Title Style) */}
-      <div className="hidden md:flex items-center flex-1 justify-center max-w-md mx-4 relative" ref={historyRef}>
+      {/* Center: Inline Editable Conversation Title */}
+      <div className="hidden md:flex items-center flex-1 justify-center max-w-md mx-4 relative">
         {isEditing ? (
           <div className="flex items-center gap-1 bg-[#23252C] border border-indigo-500/60 rounded-xl px-3 py-1 shadow-inner">
             <input
@@ -125,65 +118,27 @@ export default function Topbar({ sessionId, pageTitle, onNewSession, onToggleHis
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1 group">
-            <button
-              onClick={() => setIsEditing(true)}
-              title="Click to rename conversation"
-              aria-label="Rename conversation"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl hover:bg-[#23252C] transition-colors cursor-pointer text-slate-300 hover:text-white font-medium text-xs max-w-[260px]"
-            >
-              <span className="truncate">{title}</span>
-              <Pencil className="w-3 h-3 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-            
-            <button
-              onClick={() => onToggleHistory?.()}
-              title="Open chat history"
-              aria-label="Open chat history"
-              className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-[#23252C] transition-colors cursor-pointer flex items-center"
-            >
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button
+            onClick={() => setIsEditing(true)}
+            title="Click to rename conversation"
+            aria-label="Rename conversation"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-[#23252C] transition-colors cursor-pointer text-slate-300 hover:text-white font-medium text-[13px] max-w-[260px] group"
+          >
+            <span className="truncate">{title}</span>
+            <Pencil className="w-3 h-3 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+          </button>
         )}
-
-        <AnimatePresence>
-          {showHistoryDropdown && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
-              transition={{ duration: 0.15 }}
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 bg-[#21232A] border border-slate-700/80 rounded-2xl shadow-2xl p-2 z-50 text-slate-200"
-            >
-              <div className="flex items-center gap-2 px-2.5 py-2 border-b border-slate-700/60 text-xs font-semibold text-slate-400">
-                <History className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Recent Conversations</span>
-              </div>
-              <div className="py-1 space-y-1 mt-1">
-                <button onClick={() => setShowHistoryDropdown(false)} className="w-full text-left px-2.5 py-2 rounded-xl bg-[#2C2F38] hover:bg-[#343742] text-xs text-white font-medium truncate flex items-center justify-between cursor-pointer">
-                  <span className="truncate">{title}</span>
-                  <span className="text-[10px] font-mono text-emerald-400 shrink-0 ml-2">Active</span>
-                </button>
-                <button onClick={onNewSession} className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-[#2A2C35] text-xs text-slate-300 hover:text-white truncate flex items-center justify-between cursor-pointer">
-                  <span className="truncate">React & AI Course Plan</span>
-                  <span className="text-[10px] font-mono text-slate-500 shrink-0 ml-2">2d ago</span>
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
-      {/* Right: Share CTA (Claude Style), Connection Status, & Profile Avatar */}
+      {/* Right: New Chat, Connection Status & Profile Avatar */}
       <div className="flex items-center gap-2.5 shrink-0">
         <button
-          onClick={() => toast.success('Share link generated to clipboard!')}
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-[#24262E] hover:bg-[#2C2E38] border border-slate-700/60 rounded-xl transition-all cursor-pointer shadow-sm"
-          title="Share read-only chat link"
+          onClick={onNewSession}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all cursor-pointer shadow-sm shadow-indigo-500/20"
+          title="Start a new chat"
         >
-          <Share2 className="w-3.5 h-3.5" />
-          <span>Share</span>
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">New Chat</span>
         </button>
 
         <ConnectionIndicator />

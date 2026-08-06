@@ -2,9 +2,10 @@
  * usePlanner — specialized chat hook that intercepts SSE 'plan_update' events 
  * to sync the local CoursePlan state.
  */
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { plannerService } from '../services/plannerService';
+import { conversationService } from '../services/conversationService';
 import { API_BASE_URL } from '../services/apiClient';
 import type { ChatMessageUI, CoursePlan, ChatRequest } from '../types/api';
 
@@ -12,7 +13,73 @@ export function usePlanner(sessionId: string) {
   const queryClient = useQueryClient();
   const [messages, setMessages] = useState<ChatMessageUI[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const sessionRef = useRef(sessionId);
+
+  useEffect(() => {
+    sessionRef.current = sessionId;
+  }, [sessionId]);
+
+  // Restore planner chat history
+  useEffect(() => {
+    let cancelled = false;
+    const loadConversation = async () => {
+      setIsLoadingHistory(true);
+      setMessages([]);
+      setConversationId(null);
+      try {
+        const conversation = await conversationService.getBySessionId(sessionId);
+        if (cancelled) return;
+        if (conversation) {
+          setConversationId(conversation.id);
+          const savedMessages = await conversationService.loadMessages(conversation.id);
+          if (cancelled) return;
+          if (savedMessages.length > 0) setMessages(savedMessages);
+        }
+      } catch (err) {
+        console.error('[usePlanner] Failed to load history:', err);
+      } finally {
+        if (!cancelled) setIsLoadingHistory(false);
+      }
+    };
+    loadConversation();
+    return () => { cancelled = true; };
+  }, [sessionId]);
+
+  const ensureConversation = useCallback(async (firstMsg?: string) => {
+    if (conversationId) return conversationId;
+    try {
+      const existing = await conversationService.getBySessionId(sessionRef.current);
+      if (existing) {
+        setConversationId(existing.id);
+        return existing.id;
+      }
+      const title = firstMsg ? conversationService.generateTitle(firstMsg) : 'New Planner';
+      const created = await conversationService.createConversation(sessionRef.current, 'planner', title);
+      if (created) {
+        setConversationId(created.id);
+        return created.id;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return null;
+  }, [conversationId]);
+
+  const persistMessage = useCallback(async (convId: string, message: ChatMessageUI) => {
+    try {
+      await conversationService.saveMessage(convId, message);
+      const allMessages = await conversationService.loadMessages(convId);
+      await conversationService.updateConversation(sessionRef.current, {
+        message_count: allMessages.length,
+        last_message_preview: message.content.substring(0, 100),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
 
   // Fetch initial plan
   const { data: coursePlan, isLoading: isPlanLoading } = useQuery({
@@ -73,6 +140,11 @@ export function usePlanner(sessionId: string) {
       abortRef.current = controller;
 
       (async () => {
+        const isFirstMessage = messages.length === 0;
+        ensureConversation(isFirstMessage ? question.trim() : undefined).then((convId) => {
+          if (convId) persistMessage(convId, userMsg);
+        });
+
         try {
           const request: ChatRequest = { session_id: sessionId, question: question.trim() };
           const response = await fetch(`${API_BASE_URL}/planner/chat/stream`, {
@@ -115,7 +187,15 @@ export function usePlanner(sessionId: string) {
                   // The backend emitted the new JSON plan!
                   queryClient.setQueryData(['coursePlan', sessionId], parsed.data);
                 } else if (parsed.event === 'done') {
-                  updateLastAssistant((prev) => ({ ...prev, isStreaming: false }));
+                  updateLastAssistant((prev) => {
+                    const finishedMsg = { ...prev, isStreaming: false };
+                    if (conversationId || sessionRef.current) {
+                      ensureConversation().then((convId) => {
+                        if (convId) persistMessage(convId, finishedMsg);
+                      });
+                    }
+                    return finishedMsg;
+                  });
                   setIsStreaming(false);
                   abortRef.current = null;
                 } else if (parsed.event === 'error') {
@@ -145,7 +225,7 @@ export function usePlanner(sessionId: string) {
         }
       })();
     },
-    [sessionId, isStreaming, addMessage, updateLastAssistant, queryClient]
+    [sessionId, isStreaming, messages.length, conversationId, addMessage, updateLastAssistant, ensureConversation, persistMessage, queryClient]
   );
 
   const stopStreaming = useCallback(() => {
@@ -164,7 +244,8 @@ export function usePlanner(sessionId: string) {
     stopStreaming,
     coursePlan,
     isPlanLoading,
-    savePlan: savePlanMutation.mutate,
+    savePlan: (newPlan: CoursePlan) => savePlanMutation.mutate(newPlan),
     isSaving: savePlanMutation.isPending,
+    isLoadingHistory,
   };
 }

@@ -93,8 +93,6 @@ class ContextBuilder:
             parts.append(f"Slide {chunk.slide_number}")
         if chunk.timestamp:
             parts.append(f"Timestamp {chunk.timestamp}")
-        if chunk.chunk_number is not None:
-            parts.append(f"Chunk {chunk.chunk_number}")
 
         return ", ".join(parts) + "]"
 

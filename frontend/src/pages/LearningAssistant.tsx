@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import Topbar from '../components/layout/Topbar';
 import Sidebar from '../components/layout/Sidebar';
 import MobileSidebar from '../components/layout/MobileSidebar';
-import ConversationSidebar from '../components/layout/ConversationSidebar';
 import ChatWindow from '../components/chat/ChatWindow';
 import ChatInput from '../components/chat/ChatInput';
 import { useSession } from '../hooks/useSession';
@@ -20,11 +19,10 @@ import { chatService } from '../services/chatService';
 export default function LearningAssistant() {
   const { sessionId, createNewSession, restoreSession } = useSession();
   const { messages, isStreaming, isLoadingHistory, sendMessage, stopStreaming, clearChat } = useChat(sessionId, 'learning');
-  const { sources, isLoading: isLoadingSources, refetch, deleteSource, isDeleting } = useSources(sessionId);
+  const { sources } = useSources(sessionId);
   const { uploads, uploadFile, uploadUrl, uploadYoutube, removeUpload, retryUpload, clearCompleted, isUploading } = useUpload(sessionId);
   const { conversations, isLoading: isLoadingConversations, refetch: refetchConversations, deleteConversation } = useConversations();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleNewSession = async () => {
@@ -46,13 +44,6 @@ export default function LearningAssistant() {
 
   const handleDeleteConversation = async (targetSessionId: string) => {
     await deleteConversation(targetSessionId);
-    // Also clean up backend resources
-    try {
-      await chatService.cleanupSession(targetSessionId);
-    } catch {
-      // Silently ignore cleanup errors
-    }
-    // If deleting the active conversation, start a new one
     if (targetSessionId === sessionId) {
       createNewSession();
     }
@@ -94,46 +85,33 @@ export default function LearningAssistant() {
 
   return (
     <div className="h-screen flex flex-col bg-[#0B1120] overflow-hidden">
-      {/* Conversation History Drawer */}
-      <ConversationSidebar
-        isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
-        conversations={conversations}
-        isLoading={isLoadingConversations}
-        activeSessionId={sessionId}
-        onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewSession}
-        onDeleteConversation={handleDeleteConversation}
-      />
-
       {/* Top Navigation */}
       <Topbar
         sessionId={sessionId}
         pageTitle="Multi-Source Learning Assistant"
         onNewSession={handleNewSession}
-        onToggleHistory={() => { setIsHistoryOpen(true); refetchConversations(); }}
       />
 
       {/* Main Content Viewport */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* Desktop 296px Sidebar */}
         <Sidebar
-          sources={sources}
-          isLoadingSources={isLoadingSources}
-          onDeleteSource={deleteSource}
-          onRefreshSources={refetch}
-          isDeletingSource={isDeleting}
+          conversations={conversations}
+          isLoading={isLoadingConversations}
+          activeSessionId={sessionId}
+          onSelectConversation={handleSelectConversation}
+          onDeleteConversation={handleDeleteConversation}
         />
 
         {/* Mobile Slide-Out Drawer */}
         <MobileSidebar
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
-          sources={sources}
-          isLoadingSources={isLoadingSources}
-          onDeleteSource={deleteSource}
-          onRefreshSources={refetch}
-          isDeletingSource={isDeleting}
+          conversations={conversations}
+          isLoading={isLoadingConversations}
+          activeSessionId={sessionId}
+          onSelectConversation={handleSelectConversation}
+          onDeleteConversation={handleDeleteConversation}
         />
 
         {/* Center Chat Area with conversation drop target */}
@@ -167,7 +145,7 @@ export default function LearningAssistant() {
               className="flex items-center gap-2 px-2.5 py-1 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-xs font-semibold"
             >
               <Menu className="w-4 h-4" />
-              <span>Knowledge Base</span>
+              <span>Chat History</span>
             </button>
             <span className="text-xs font-mono text-indigo-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
               {sources.length} indexed asset{sources.length !== 1 ? 's' : ''}
@@ -176,9 +154,10 @@ export default function LearningAssistant() {
 
           {/* Loading indicator when restoring conversation */}
           {isLoadingHistory && (
-            <div className="flex items-center justify-center py-4 border-b border-white/5">
-              <div className="w-4 h-4 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mr-2" />
-              <span className="text-[13px] text-slate-400">Restoring conversation…</span>
+            <div className="absolute inset-0 z-40 bg-[#0B1120]/80 backdrop-blur-sm flex flex-col items-center justify-center">
+              <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-white tracking-wide">Restoring Conversation...</h3>
+              <p className="text-xs text-slate-400 mt-1">Retrieving your AI chat history</p>
             </div>
           )}
 

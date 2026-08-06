@@ -8,6 +8,13 @@ This architecture utilizes a single unified AI backend for ingestion, embeddings
 
 ---
 
+## 🆕 Recent Updates
+- **Classic Chat UI styling**: Implemented standard chat interface layout (tight-wrapping right-aligned user bubbles and left-aligned AI responses).
+- **Advanced YouTube Semantic Chunking**: The transcript pipeline now groups fast-paced captions into cohesive ~800-character semantic paragraphs, completely fixing the disjointed 5-word chunk limitations.
+- **Robust Multi-Topic Retrieval**: Upgraded RAG parameters (`TOP_K=30`, `MAX_CONTEXT_TOKENS=10,000`) enabling the AI to answer extremely complex multi-part queries spanning several different uploaded files at once.
+
+---
+
 ## 🚀 Features
 
 ### Task 1: Multi-Source Learning Assistant (Complete)

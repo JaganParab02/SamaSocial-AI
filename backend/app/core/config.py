@@ -61,7 +61,7 @@ class Settings(BaseSettings):
         description="Character overlap between consecutive chunks"
     )
     TOP_K: int = Field(
-        default=5,
+        default=30,
         description="Number of vector search matches to return by default"
     )
 
@@ -81,7 +81,7 @@ class Settings(BaseSettings):
 
     # Retrieval Configuration
     MAX_CONTEXT_TOKENS: int = Field(
-        default=3000,
+        default=10000,
         description="Maximum token budget for retrieved context injected into prompts"
     )
     SIMILARITY_THRESHOLD: float = Field(

@@ -88,6 +88,11 @@ class YoutubeParser(BaseParser):
         structured_items: List[Dict[str, Any]] = []
         full_text_lines = []
 
+        current_text = ""
+        current_start = 0.0
+        current_duration = 0.0
+        first_in_chunk = True
+
         for entry in transcript_list:
             if isinstance(entry, dict):
                 text = str(entry.get("text", "")).strip()
@@ -97,17 +102,43 @@ class YoutubeParser(BaseParser):
                 text = str(getattr(entry, "text", "")).strip()
                 start_sec = float(getattr(entry, "start", 0.0))
                 duration = float(getattr(entry, "duration", 0.0))
-            timestamp_str = self.format_timestamp(start_sec)
+            
+            if not text:
+                continue
 
-            if text:
-                line_str = f"[{timestamp_str}] {text}"
-                full_text_lines.append(line_str)
+            if first_in_chunk:
+                current_start = start_sec
+                first_in_chunk = False
+            
+            current_text += (" " if current_text else "") + text
+            current_duration += duration
+
+            # Group captions into meaningful semantic chunks (~800 chars)
+            if len(current_text) > 800:
+                timestamp_str = self.format_timestamp(current_start)
                 structured_items.append({
                     "timestamp": timestamp_str,
-                    "start_seconds": round(start_sec, 2),
-                    "duration": round(duration, 2),
-                    "text": text
+                    "start_seconds": round(current_start, 2),
+                    "duration": round(current_duration, 2),
+                    "text": current_text.strip()
                 })
+                full_text_lines.append(f"[{timestamp_str}] {current_text.strip()}")
+                
+                # Reset for next chunk
+                current_text = ""
+                current_duration = 0.0
+                first_in_chunk = True
+
+        # Append any remaining text
+        if current_text.strip():
+            timestamp_str = self.format_timestamp(current_start)
+            structured_items.append({
+                "timestamp": timestamp_str,
+                "start_seconds": round(current_start, 2),
+                "duration": round(current_duration, 2),
+                "text": current_text.strip()
+            })
+            full_text_lines.append(f"[{timestamp_str}] {current_text.strip()}")
 
         combined_text = "\n".join(full_text_lines)
         # Video title placeholder as per prompt instructions (requires official Youtube Data API v3 for exact titles)
