@@ -5,6 +5,7 @@ Route handlers remain thin — strictly validating schemas and delegating execut
 
 from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
+from starlette.concurrency import run_in_threadpool
 from app.models.document import UploadResult
 from app.models.api import UrlUploadRequest, YoutubeUploadRequest
 from app.services.document_service import DocumentService
@@ -47,7 +48,7 @@ async def upload_url(
     """
     Fetch, clean, chunk, embed, and index an educational website article into Qdrant vector storage.
     """
-    return doc_service.process_url_upload(url=request.url, session_id=request.session_id)
+    return await run_in_threadpool(doc_service.process_url_upload, url=request.url, session_id=request.session_id)
 
 
 @router.post("/youtube", response_model=UploadResult, status_code=200)
@@ -61,7 +62,8 @@ async def upload_youtube(
     if "youtube.com" not in request.url_or_video_id and "youtu.be" not in request.url_or_video_id:
         raise HTTPException(status_code=400, detail="Invalid YouTube URL. Must contain youtube.com or youtu.be")
 
-    return doc_service.process_youtube_upload(
+    return await run_in_threadpool(
+        doc_service.process_youtube_upload,
         url_or_id=request.url_or_video_id,
         language=request.language,
         session_id=request.session_id

@@ -6,8 +6,10 @@ Acts as clean orchestration boundary between thin FastAPI route handlers and und
 import os
 import shutil
 import tempfile
+import uuid
 from typing import Any, Dict, List, Optional
 from fastapi import UploadFile, HTTPException
+from starlette.concurrency import run_in_threadpool
 from app.models.document import SourceType, UploadResult
 from app.rag.document_pipeline import DocumentPipeline
 from app.services.source_service import SourceService
@@ -60,9 +62,10 @@ class DocumentService:
         # 2. Map extension to formal SourceType
         source_type = SourceType.PDF if ext == "pdf" else SourceType.PPT
 
-        # 3. Save file temporarily to disk to allow PyMuPDF/pptx parsing
+        # 3. Save file temporarily to disk with unique UUID prefix to prevent collisions
         temp_dir = tempfile.gettempdir()
-        temp_file_path = os.path.join(temp_dir, f"sama_upload_{filename}")
+        unique_prefix = str(uuid.uuid4())[:8]
+        temp_file_path = os.path.join(temp_dir, f"sama_{unique_prefix}_{filename}")
 
         try:
             content_bytes = await file.read()
@@ -77,8 +80,9 @@ class DocumentService:
             
             logger.info("Saved temporary upload file to: %s (Size: %d bytes)", temp_file_path, len(content_bytes))
 
-            # 4. Invoke multi-source document ingestion pipeline
-            result = self.pipeline.process_and_index(
+            # 4. Invoke multi-source document ingestion pipeline inside threadpool so asyncio event loop never blocks
+            result = await run_in_threadpool(
+                self.pipeline.process_and_index,
                 source=temp_file_path,
                 source_type=source_type,
                 source_name=filename,

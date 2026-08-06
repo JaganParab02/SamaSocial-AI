@@ -1,7 +1,7 @@
 /**
- * useUpload — manages file/URL/YouTube upload lifecycle.
+ * useUpload — manages file/URL/YouTube upload lifecycle with sequential queueing.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { uploadService } from '../services/uploadService';
 import type { UploadItem } from '../types/api';
@@ -9,71 +9,90 @@ import type { UploadItem } from '../types/api';
 export function useUpload(sessionId: string) {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const queryClient = useQueryClient();
+  const queueRef = useRef<Promise<any>>(Promise.resolve());
 
   const updateUpload = useCallback((id: string, patch: Partial<UploadItem>) => {
     setUploads((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)));
   }, []);
 
   const uploadFile = useCallback(
-    async (file: File) => {
+    (file: File): Promise<any> => {
       const id = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const item: UploadItem = { id, file, type: 'file', status: 'uploading', progress: 0 };
       setUploads((prev) => [...prev, item]);
 
-      try {
-        const result = await uploadService.uploadFile(file, sessionId, (progress) => {
-          updateUpload(id, { progress, status: progress < 100 ? 'uploading' : 'processing' });
+      return new Promise((resolve, reject) => {
+        queueRef.current = queueRef.current.then(async () => {
+          try {
+            const result = await uploadService.uploadFile(file, sessionId, (progress) => {
+              updateUpload(id, { progress, status: progress < 100 ? 'uploading' : 'processing' });
+            });
+            updateUpload(id, { status: 'success', progress: 100, result });
+            queryClient.invalidateQueries({ queryKey: ['sources'] });
+            resolve(result);
+            return result;
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Upload failed';
+            updateUpload(id, { status: 'error', error: message });
+            reject(err);
+            return null;
+          }
         });
-        updateUpload(id, { status: 'success', progress: 100, result });
-        queryClient.invalidateQueries({ queryKey: ['sources'] });
-        return result;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Upload failed';
-        updateUpload(id, { status: 'error', error: message });
-        throw err;
-      }
+      });
     },
     [sessionId, queryClient, updateUpload]
   );
 
   const uploadUrl = useCallback(
-    async (url: string) => {
-      const id = `upload-${Date.now()}`;
-      const item: UploadItem = { id, url, type: 'url', status: 'uploading', progress: 30 };
+    (url: string): Promise<any> => {
+      const id = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const item: UploadItem = { id, url, type: 'url', status: 'uploading', progress: 0 };
       setUploads((prev) => [...prev, item]);
 
-      try {
-        updateUpload(id, { status: 'processing', progress: 60 });
-        const result = await uploadService.uploadUrl(url, sessionId);
-        updateUpload(id, { status: 'success', progress: 100, result });
-        queryClient.invalidateQueries({ queryKey: ['sources'] });
-        return result;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'URL upload failed';
-        updateUpload(id, { status: 'error', error: message });
-        throw err;
-      }
+      return new Promise((resolve, reject) => {
+        queueRef.current = queueRef.current.then(async () => {
+          try {
+            updateUpload(id, { status: 'processing', progress: 60 });
+            const result = await uploadService.uploadUrl(url, sessionId);
+            updateUpload(id, { status: 'success', progress: 100, result });
+            queryClient.invalidateQueries({ queryKey: ['sources'] });
+            resolve(result);
+            return result;
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'URL upload failed';
+            updateUpload(id, { status: 'error', error: message });
+            reject(err);
+            return null;
+          }
+        });
+      });
     },
     [sessionId, queryClient, updateUpload]
   );
 
   const uploadYoutube = useCallback(
-    async (urlOrId: string) => {
-      const id = `upload-${Date.now()}`;
-      const item: UploadItem = { id, url: urlOrId, type: 'youtube', status: 'uploading', progress: 30 };
+    (urlOrId: string): Promise<any> => {
+      const id = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const item: UploadItem = { id, url: urlOrId, type: 'youtube', status: 'uploading', progress: 0 };
       setUploads((prev) => [...prev, item]);
 
-      try {
-        updateUpload(id, { status: 'processing', progress: 60 });
-        const result = await uploadService.uploadYoutube(urlOrId, sessionId);
-        updateUpload(id, { status: 'success', progress: 100, result });
-        queryClient.invalidateQueries({ queryKey: ['sources'] });
-        return result;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'YouTube upload failed';
-        updateUpload(id, { status: 'error', error: message });
-        throw err;
-      }
+      return new Promise((resolve, reject) => {
+        queueRef.current = queueRef.current.then(async () => {
+          try {
+            updateUpload(id, { status: 'processing', progress: 60 });
+            const result = await uploadService.uploadYoutube(urlOrId, sessionId);
+            updateUpload(id, { status: 'success', progress: 100, result });
+            queryClient.invalidateQueries({ queryKey: ['sources'] });
+            resolve(result);
+            return result;
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'YouTube upload failed';
+            updateUpload(id, { status: 'error', error: message });
+            reject(err);
+            return null;
+          }
+        });
+      });
     },
     [sessionId, queryClient, updateUpload]
   );
