@@ -84,7 +84,7 @@ export default function MobileSidebar({
               />
             </div>
 
-            <div className="border-t border-slate-800/80 shrink-0 bg-[#111317] p-2.5 pb-6">
+            <div className="border-t border-slate-800/80 shrink-0 bg-[#111317] p-3.5 pb-12 mb-2">
               <UploadPanel
                 onUploadFile={onUploadFile}
                 onUploadUrl={onUploadUrl}

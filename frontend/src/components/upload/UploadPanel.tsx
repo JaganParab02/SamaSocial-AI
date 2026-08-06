@@ -112,16 +112,16 @@ export default function UploadPanel({ onUploadFile, onUploadUrl, onUploadYoutube
   const formatTags = ['PDF', 'PPT', 'DOCX', 'TXT', 'URL', 'YouTube'];
 
   return (
-    <div className="bg-[#181A22] border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-2xl shrink-0 select-none m-1 transition-all">
+    <div className="bg-[#181A22] border border-slate-700/80 rounded-[28px] p-5 sm:p-7 shadow-2xl shrink-0 select-none m-2 sm:m-3 mb-6 transition-all">
       {/* Segmented Tab Selector with generous spacing and font size */}
-      <div className="flex bg-[#21242E] p-1.5 rounded-xl mb-4 border border-slate-700/60 shadow-inner">
+      <div className="flex bg-[#21242E] p-2 rounded-2xl mb-5 border border-slate-700/60 shadow-inner">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => { setActiveTab(key); setError(null); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
               activeTab === key
-                ? 'bg-[#2B2E3C] text-white shadow-md border border-slate-600/60 scale-[1.02]'
+                ? 'bg-[#2B2E3C] text-white shadow-lg border border-slate-600/70 scale-[1.03]'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -131,7 +131,7 @@ export default function UploadPanel({ onUploadFile, onUploadUrl, onUploadYoutube
         ))}
       </div>
 
-      <div className="space-y-3.5">
+      <div className="space-y-4">
         {/* File Dropzone */}
         {activeTab === 'file' && (
           <div
@@ -139,23 +139,23 @@ export default function UploadPanel({ onUploadFile, onUploadUrl, onUploadYoutube
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`group relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center min-h-[145px] ${
+            className={`group relative border-2 border-dashed rounded-2xl p-7 my-3 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center min-h-[160px] shadow-sm ${
               isDragOver
                 ? 'border-indigo-500 bg-indigo-500/10'
                 : 'border-slate-700 hover:border-indigo-400 bg-[#1D1F29] hover:bg-[#252834]'
             }`}
           >
-            <div className="w-11 h-11 rounded-full bg-[#292C3A] border border-slate-600 flex items-center justify-center mb-3 text-indigo-400 shadow-md group-hover:scale-110 transition-transform">
-              <CloudUpload className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-full bg-[#292C3A] border border-slate-600 flex items-center justify-center mb-3.5 text-indigo-400 shadow-md group-hover:scale-110 transition-transform">
+              <CloudUpload className="w-6 h-6" />
             </div>
-            <p className="text-sm font-bold text-slate-200 tracking-wide">
+            <p className="text-sm font-extrabold text-slate-100 tracking-wide mb-1">
               Drag files or <span className="text-indigo-400 underline decoration-indigo-500/50">Browse</span>
             </p>
 
             {/* Supported Formats Chips */}
             <div className="flex flex-wrap justify-center gap-1.5 mt-3">
               {formatTags.map((t) => (
-                <span key={t} className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#262833] text-slate-400 border border-slate-700/70">
+                <span key={t} className="text-[10px] font-mono font-semibold px-2.5 py-1 rounded-lg bg-[#262833] text-slate-300 border border-slate-700/80 shadow-xs">
                   {t}
                 </span>
               ))}

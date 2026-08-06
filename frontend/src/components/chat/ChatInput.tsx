@@ -68,10 +68,10 @@ export default function ChatInput({
   };
 
   return (
-    <div className="w-full px-6 sm:px-10 pb-10 md:pb-12 pt-4 bg-transparent shrink-0 select-none relative z-10 flex justify-center items-center">
-      <div className="max-w-[820px] w-full mx-auto">
-        {/* Floating Claude-Style Input Container */}
-        <div className="relative flex flex-col bg-[#1D1F27] border border-slate-700/80 rounded-[28px] shadow-2xl shadow-black/60 hover:border-slate-600 focus-within:border-indigo-500/80 transition-all p-5">
+    <div className="w-full px-6 sm:px-12 pb-16 sm:pb-24 pt-6 mb-4 sm:mb-6 bg-transparent shrink-0 select-none relative z-10 flex justify-center items-center">
+      <div className="max-w-[840px] w-full mx-auto">
+        {/* Floating Claude-Style Input Container with deep padding and high floating clearance */}
+        <div className="relative flex flex-col bg-[#1D1F27] border border-slate-700/80 rounded-[32px] shadow-2xl shadow-black/70 hover:border-slate-600 focus-within:border-indigo-500/80 transition-all p-6 sm:p-7">
           
           {/* Recording Banner when Voice is Active */}
           <AnimatePresence>
@@ -80,9 +80,9 @@ export default function ChatInput({
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="flex items-center justify-between px-4 py-2 bg-[#3B1E22] border-b border-red-500/40 rounded-t-[20px] mb-3 text-slate-200"
+                className="flex items-center justify-between px-5 py-2.5 bg-[#3B1E22] border-b border-red-500/40 rounded-t-[24px] mb-4 text-slate-200"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping" />
                   <span className="text-xs font-semibold text-red-300">Recording voice query…</span>
                 </div>
@@ -99,8 +99,8 @@ export default function ChatInput({
             )}
           </AnimatePresence>
 
-          {/* Top Textarea Area with increased text font size and comfort padding */}
-          <div className="w-full px-2 py-1">
+          {/* Top Textarea Area with ample surrounding padding so text is never near the edges */}
+          <div className="w-full px-4 sm:px-6 pt-3 pb-4">
             <textarea
               ref={textareaRef}
               value={input}
@@ -109,40 +109,40 @@ export default function ChatInput({
               placeholder={placeholder}
               disabled={disabled}
               rows={1}
-              className="w-full text-base sm:text-[16px] bg-transparent border-none text-slate-100 placeholder-slate-400 resize-none focus:outline-none disabled:opacity-50 font-reading leading-[1.6] max-h-[160px]"
+              className="w-full text-base sm:text-[17px] bg-transparent border-none text-slate-100 placeholder-slate-400 resize-none focus:outline-none disabled:opacity-50 font-reading leading-[1.6] max-h-[180px]"
               aria-label="Chat query input"
             />
           </div>
 
-          {/* Bottom Controls Bar inside Box */}
-          <div className="flex items-center justify-between gap-3 mt-3 pt-2 px-1 border-t border-slate-800/40">
+          {/* Bottom Controls Bar inside Box with spacious margins */}
+          <div className="flex items-center justify-between gap-4 mt-4 pt-3 px-2 border-t border-slate-800/60">
             {/* Left: Attach (+) button */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <button
                 onClick={onAttach || (() => toast('Open the sidebar to upload PDFs, videos & URLs!', { icon: '📎' }))}
-                className="p-2 text-slate-300 hover:text-white bg-[#282B34] hover:bg-[#323642] border border-slate-600/70 rounded-2xl transition-all shrink-0 cursor-pointer flex items-center justify-center w-9 h-9 shadow-sm hover:scale-105"
+                className="p-2.5 text-slate-300 hover:text-white bg-[#282B34] hover:bg-[#323642] border border-slate-600/70 rounded-2xl transition-all shrink-0 cursor-pointer flex items-center justify-center w-10 h-10 shadow-md hover:scale-105"
                 title="Attach file or document (+)"
                 aria-label="Attach source file"
               >
-                <Plus className="w-4 h-4 text-indigo-400" />
+                <Plus className="w-5 h-5 text-indigo-400" />
               </button>
               
               {onClear && (
                 <button
                   onClick={() => { onClear(); toast('Conversation cleared', { icon: '🧹' }); }}
-                  className="p-2 text-slate-500 hover:text-red-400 hover:bg-[#282B34] rounded-2xl transition-colors shrink-0 cursor-pointer w-9 h-9 flex items-center justify-center"
+                  className="p-2.5 text-slate-500 hover:text-red-400 hover:bg-[#282B34] rounded-2xl transition-colors shrink-0 cursor-pointer w-10 h-10 flex items-center justify-center"
                   title="Clear chat history"
                   aria-label="Clear chat history"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-5 h-5" />
                 </button>
               )}
             </div>
 
             {/* Right: Model Tag, Voice, & Send Button */}
-            <div className="flex items-center gap-2.5">
-              <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-300 bg-[#262932] px-3 py-1.5 rounded-xl border border-slate-700/60 shadow-inner select-none">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-300 bg-[#262932] px-3.5 py-2 rounded-xl border border-slate-700/60 shadow-inner select-none">
+                <Sparkles className="w-4 h-4 text-emerald-400" />
                 <span>SamaSocial AI</span>
                 <span className="text-slate-400 font-mono">v1.2</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
@@ -150,7 +150,7 @@ export default function ChatInput({
 
               <button
                 onClick={handleVoiceClick}
-                className={`p-2 rounded-2xl transition-colors shrink-0 cursor-pointer w-9 h-9 flex items-center justify-center border ${
+                className={`p-2.5 rounded-2xl transition-colors shrink-0 cursor-pointer w-10 h-10 flex items-center justify-center border ${
                   isRecording
                     ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-[#282B34] border-transparent'
@@ -158,7 +158,7 @@ export default function ChatInput({
                 title={isRecording ? 'Stop recording' : 'Voice query input'}
                 aria-label="Toggle voice query input"
               >
-                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
 
               {isStreaming ? (

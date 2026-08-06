@@ -145,9 +145,9 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Pinned Bottom Upload Panel with upwards padding to lift UI */}
+        {/* Pinned Bottom Upload Panel with generous upward elevation to pull UI up */}
         {!isCollapsed && (
-          <div ref={uploadPanelRef} className="border-t border-slate-800/80 shrink-0 bg-[#111317] p-2 sm:p-2.5 pb-6 sm:pb-8">
+          <div ref={uploadPanelRef} className="border-t border-slate-800/80 shrink-0 bg-[#111317] p-3 sm:p-4 pb-12 sm:pb-16 mb-4">
             <UploadPanel
               onUploadFile={onUploadFile}
               onUploadUrl={onUploadUrl}
