@@ -12,9 +12,10 @@ interface TopbarProps {
   sessionId: string;
   pageTitle: string;
   onNewSession: () => void;
+  onToggleHistory?: () => void;
 }
 
-export default function Topbar({ sessionId, pageTitle, onNewSession }: TopbarProps) {
+export default function Topbar({ sessionId, pageTitle, onNewSession, onToggleHistory }: TopbarProps) {
   const [title, setTitle] = useState('Untitled Conversation');
   const [isEditing, setIsEditing] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -136,9 +137,9 @@ export default function Topbar({ sessionId, pageTitle, onNewSession }: TopbarPro
             </button>
             
             <button
-              onClick={() => setShowHistoryDropdown((prev) => !prev)}
-              title="Recent conversation history"
-              aria-label="Toggle recent conversations"
+              onClick={() => onToggleHistory?.()}
+              title="Open chat history"
+              aria-label="Open chat history"
               className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-[#23252C] transition-colors cursor-pointer flex items-center"
             >
               <ChevronDown className="w-3.5 h-3.5" />

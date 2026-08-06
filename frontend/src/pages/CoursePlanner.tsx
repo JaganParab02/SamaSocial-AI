@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import Topbar from '../components/layout/Topbar';
 import Sidebar from '../components/layout/Sidebar';
 import MobileSidebar from '../components/layout/MobileSidebar';
+import ConversationSidebar from '../components/layout/ConversationSidebar';
 import ChatWindow from '../components/chat/ChatWindow';
 import ChatInput from '../components/chat/ChatInput';
 import CoursePlanPreview from '../components/planner/CoursePlanPreview';
@@ -15,18 +16,21 @@ import { useSession } from '../hooks/useSession';
 import { usePlanner } from '../hooks/usePlanner';
 import { useSources } from '../hooks/useSources';
 import { useUpload } from '../hooks/useUpload';
+import { useConversations } from '../hooks/useConversations';
 import { chatService } from '../services/chatService';
 
 export default function CoursePlanner() {
-  const { sessionId, createNewSession } = useSession();
+  const { sessionId, createNewSession, restoreSession } = useSession();
   const { messages, isStreaming, sendMessage, stopStreaming, coursePlan, savePlan, isSaving } = usePlanner(sessionId);
   const { sources, isLoading: isLoadingSources, refetch, deleteSource, isDeleting } = useSources(sessionId);
   const { uploads, uploadFile, uploadUrl, uploadYoutube, removeUpload, retryUpload, clearCompleted, isUploading } = useUpload(sessionId);
+  const { conversations, isLoading: isLoadingConversations, refetch: refetchConversations, deleteConversation } = useConversations();
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [mobileTab, setMobileTab] = useState<'chat' | 'plan'>('chat');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const handleNewSession = async () => {
     const oldSessionId = sessionId;
@@ -35,6 +39,24 @@ export default function CoursePlanner() {
       await chatService.cleanupSession(oldSessionId);
     } catch {
       // Silently ignore cleanup errors
+    }
+    refetchConversations();
+  };
+
+  const handleSelectConversation = (targetSessionId: string) => {
+    if (targetSessionId === sessionId) return;
+    restoreSession(targetSessionId);
+  };
+
+  const handleDeleteConversation = async (targetSessionId: string) => {
+    await deleteConversation(targetSessionId);
+    try {
+      await chatService.cleanupSession(targetSessionId);
+    } catch {
+      // Silently ignore cleanup errors
+    }
+    if (targetSessionId === sessionId) {
+      createNewSession();
     }
   };
 
@@ -70,10 +92,23 @@ export default function CoursePlanner() {
 
   return (
     <div className="h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] overflow-hidden select-none">
+      {/* Conversation History Drawer */}
+      <ConversationSidebar
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        conversations={conversations}
+        isLoading={isLoadingConversations}
+        activeSessionId={sessionId}
+        onSelectConversation={handleSelectConversation}
+        onNewConversation={handleNewSession}
+        onDeleteConversation={handleDeleteConversation}
+      />
+
       <Topbar
         sessionId={sessionId}
         pageTitle="AI Course Planning Assistant"
         onNewSession={handleNewSession}
+        onToggleHistory={() => { setIsHistoryOpen(true); refetchConversations(); }}
       />
       
       {/* Mobile Segmented Toggle Strip (Visible on sub-desktop only) */}
