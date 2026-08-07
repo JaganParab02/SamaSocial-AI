@@ -141,12 +141,13 @@ class ExportService:
             for l in mod.lessons:
                 add_text(f"    - Lesson: {l.title} ({l.estimated_duration_minutes} min)", fontsize=10, line_spacing=13)
             for r in mod.resources:
-                add_text(f"    - Resource: [{r.type.upper()}] {r.title} ({r.url or 'Public Free Access'})", fontsize=9, line_spacing=12, color=(0.0, 0.4, 0.8))
+                url_text = f" ({r.url})" if r.url else ""
+                add_text(f"    - Resource: [{r.type.upper()}] {r.title}{url_text}", fontsize=9, line_spacing=12, color=(0.0, 0.4, 0.8))
             for p in mod.projects:
                 add_text(f"    - Project: {p.title} ({p.difficulty})", fontsize=10, line_spacing=13, color=(0.6, 0.3, 0.0))
             y_cursor += 10
             
-        pdf_bytes = doc.write()
+        pdf_bytes = doc.tobytes()
         doc.close()
         logger.info("Successfully generated PDF syllabus document in memory.")
         return pdf_bytes

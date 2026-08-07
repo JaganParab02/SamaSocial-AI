@@ -16,6 +16,7 @@ export interface ConversationRecord {
   updated_at: string;
   message_count: number;
   last_message_preview: string | null;
+  course_plan?: any | null;
 }
 
 export interface MessageRecord {
@@ -95,7 +96,7 @@ export const conversationService = {
    */
   async updateConversation(
     sessionId: string,
-    patch: Partial<Pick<ConversationRecord, 'title' | 'last_message_preview' | 'message_count'>>
+    patch: Partial<Pick<ConversationRecord, 'title' | 'last_message_preview' | 'message_count' | 'course_plan'>>
   ): Promise<void> {
     const { error } = await supabase
       .from('conversations')

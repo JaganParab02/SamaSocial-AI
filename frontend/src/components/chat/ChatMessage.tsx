@@ -45,6 +45,25 @@ export default function ChatMessage({ message, onRegenerate }: ChatMessageProps)
     }
   };
 
+  // Parse <think>...</think> blocks from content
+  let displayContent = message.content || '';
+  let thinkContent = '';
+  
+  if (!isUser && displayContent) {
+    const thinkStart = displayContent.indexOf('<think>');
+    if (thinkStart !== -1) {
+      const thinkEnd = displayContent.indexOf('</think>', thinkStart);
+      if (thinkEnd !== -1) {
+        thinkContent = displayContent.slice(thinkStart + 7, thinkEnd).trim();
+        displayContent = (displayContent.slice(0, thinkStart) + displayContent.slice(thinkEnd + 8)).trim();
+      } else {
+        // Unclosed think tag (streaming in progress)
+        thinkContent = displayContent.slice(thinkStart + 7).trim();
+        displayContent = displayContent.slice(0, thinkStart).trim();
+      }
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -107,9 +126,28 @@ export default function ChatMessage({ message, onRegenerate }: ChatMessageProps)
               
               {/* Markdown Core Content */}
               <div className={`markdown-body ${message.isStreaming ? 'streaming-cursor' : ''}`}>
-                {message.content ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-                ) : message.isStreaming ? (
+                
+                {/* Collapsible Think Block */}
+                {thinkContent && (
+                  <details className="mb-4 bg-[#26282E] rounded-lg border border-slate-700/60 overflow-hidden group">
+                    <summary className="px-4 py-2.5 cursor-pointer text-xs font-semibold text-slate-400 bg-[#1E2025] hover:bg-[#2A2D34] transition-colors flex items-center select-none list-none">
+                      <div className="flex items-center justify-between w-full">
+                        <span className="flex items-center gap-2">
+                          <Bot className="w-3.5 h-3.5 text-indigo-400" />
+                          {message.isStreaming && !message.content?.includes('</think>') ? 'AI is thinking...' : 'Thought Process'}
+                        </span>
+                        <span className="text-slate-500 opacity-60 text-[10px]">Click to expand</span>
+                      </div>
+                    </summary>
+                    <div className="px-4 py-3 text-[13px] text-slate-400 font-mono whitespace-pre-wrap max-h-[400px] overflow-y-auto leading-relaxed opacity-90 border-t border-slate-700/60">
+                      {thinkContent}
+                    </div>
+                  </details>
+                )}
+
+                {displayContent ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayContent}</ReactMarkdown>
+                ) : message.isStreaming && !thinkContent ? (
                   <div className="flex items-center gap-2.5 text-indigo-400 py-2">
                     <div className="flex gap-1.5">
                       <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
@@ -135,7 +173,7 @@ export default function ChatMessage({ message, onRegenerate }: ChatMessageProps)
               )}
 
               {/* Minimalist Transparent Action Bar underneath answer */}
-              {!message.isStreaming && message.content && (
+              {!message.isStreaming && (displayContent || thinkContent) && (
                 <div className="flex items-center gap-2 pt-2 text-slate-400 text-xs opacity-70 hover:opacity-100 transition-opacity select-none">
                   <button
                     onClick={handleCopy}

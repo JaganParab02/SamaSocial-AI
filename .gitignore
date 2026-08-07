@@ -33,3 +33,7 @@ qdrant_storage/
 
 # AI tracking artifacts (exclude chat logs/scratch)
 .ai/brain/
+
+# Logs
+*.log
+backend/logs/

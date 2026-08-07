@@ -195,14 +195,21 @@ class CoursePlannerService:
         self.memory_service.append(session, role="user", content=request.question)
 
         # 4. Generate Chat Response (Streaming)
+        # We need to pass the newly generated plan back to the chat model
+        updated_plan_str = "{}"
+        if updated_plan_obj:
+            updated_plan_str = json.dumps(updated_plan_obj.model_dump())
+
         chat_system = self.prompt_loader.build_prompt(
             "course_chat",
             CONTEXT=context_text,
             HISTORY=history_text,
             QUESTION=request.question,
+            CURRENT_PLAN=updated_plan_str,
             context=context_text,
             history=history_text,
-            question=request.question
+            question=request.question,
+            current_plan=updated_plan_str
         )
 
         messages = [
@@ -216,11 +223,11 @@ class CoursePlannerService:
         try:
             for token in self.llm_client.stream(messages=messages, temperature=0.7):
                 full_response += token
-                yield json.dumps({"event": "token", "data": token}) + "\n\n"
+                yield f"data: {json.dumps({'event': 'token', 'data': token})}\n\n"
                 
         except Exception as e:
             logger.error(f"Planner streaming error: {str(e)}")
-            yield json.dumps({"event": "error", "data": "Stream interrupted."}) + "\n\n"
+            yield f"data: {json.dumps({'event': 'error', 'data': 'Stream interrupted.'})}\n\n"
             return
             
         # Append assistant response to memory
@@ -228,12 +235,9 @@ class CoursePlannerService:
         
         # 5. Emit the updated plan as a specialized event
         if updated_plan_obj:
-            yield json.dumps({
-                "event": "plan_update",
-                "data": updated_plan_obj.model_dump()
-            }) + "\n\n"
+            yield f"data: {json.dumps({'event': 'plan_update', 'data': updated_plan_obj.model_dump()})}\n\n"
 
-        yield json.dumps({"event": "done", "data": {}}) + "\n\n"
+        yield f"data: {json.dumps({'event': 'done', 'data': {}})}\n\n"
 
     def get_course_plan(self, session_id: str) -> Optional[CoursePlan]:
         """Retrieve the current course plan for a session."""

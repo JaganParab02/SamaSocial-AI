@@ -34,6 +34,9 @@ export function usePlanner(sessionId: string) {
         if (cancelled) return;
         if (conversation) {
           setConversationId(conversation.id);
+          if (conversation.course_plan) {
+            queryClient.setQueryData(['coursePlan', sessionId], conversation.course_plan);
+          }
           const savedMessages = await conversationService.loadMessages(conversation.id);
           if (cancelled) return;
           if (savedMessages.length > 0) setMessages(savedMessages);
@@ -84,7 +87,15 @@ export function usePlanner(sessionId: string) {
   // Fetch initial plan
   const { data: coursePlan, isLoading: isPlanLoading } = useQuery({
     queryKey: ['coursePlan', sessionId],
-    queryFn: () => plannerService.getCoursePlan(sessionId),
+    queryFn: async () => {
+      // Prioritize persistent database state
+      const conversation = await conversationService.getBySessionId(sessionId);
+      if (conversation?.course_plan) {
+        return conversation.course_plan;
+      }
+      // Fallback to backend in-memory state
+      return plannerService.getCoursePlan(sessionId);
+    },
   });
 
   // Manual save mutation
@@ -92,6 +103,7 @@ export function usePlanner(sessionId: string) {
     mutationFn: (newPlan: CoursePlan) => plannerService.updateCoursePlan(sessionId, newPlan),
     onSuccess: (updated) => {
       queryClient.setQueryData(['coursePlan', sessionId], updated);
+      conversationService.updateConversation(sessionId, { course_plan: updated });
     },
   });
 
@@ -186,6 +198,9 @@ export function usePlanner(sessionId: string) {
                 } else if (parsed.event === 'plan_update') {
                   // The backend emitted the new JSON plan!
                   queryClient.setQueryData(['coursePlan', sessionId], parsed.data);
+                  ensureConversation().then((convId) => {
+                    if (convId) conversationService.updateConversation(sessionId, { course_plan: parsed.data });
+                  });
                 } else if (parsed.event === 'done') {
                   updateLastAssistant((prev) => {
                     const finishedMsg = { ...prev, isStreaming: false };
